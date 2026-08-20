@@ -1,0 +1,13 @@
+{
+  "name": "obw",
+  "version": "0.9.0",
+  "description": "Obsidian Workspace — project-scoped vault productivity (capture / notes / PM). Skills-only: owns folder layout and templates; runs the Obsidian CLI directly via the official obsidian-cli skill.",
+  "dependencies": [
+    { "name": "obsidian", "marketplace": "obsidian-skills" }
+  ],
+  "author": {
+    "name": "musingfox"
+  },
+  "repository": "https://github.com/musingfox/omp-plugins",
+  "keywords": ["obsidian", "journal", "capture", "notes", "project-management", "adr"]
+}

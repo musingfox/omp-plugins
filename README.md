@@ -1,6 +1,6 @@
 # omp-plugins
 
-Native [oh-my-pi](https://github.com/can1357/oh-my-pi) marketplace. Skills/commands here target OMP primitives (`task`, `ask`, `hub`, `checkpoint`) — not Claude Code Agent Teams / Monitor / pi-dispatch.
+Native [oh-my-pi](https://github.com/can1357/oh-my-pi) marketplace. Skills/commands target OMP primitives (`task`, `ask`, `hub`, `checkpoint`) — not Claude Code Agent Teams / Monitor / pi-dispatch.
 
 Claude Code plugins live in [cc-plugins](https://github.com/musingfox/cc-plugins).
 
@@ -8,17 +8,22 @@ Claude Code plugins live in [cc-plugins](https://github.com/musingfox/cc-plugins
 
 ```bash
 omp plugin marketplace add git@github.com:musingfox/omp-plugins.git
+omp plugin marketplace add git@github.com:kepano/obsidian-skills.git   # obw dependency
 omp plugin install cf@omp-plugins
+omp plugin install viz@omp-plugins
+omp plugin install obw@omp-plugins
 omp plugin list
 ```
 
-Reload plugins in-session: `/reload-plugins`.
+Reload in-session: `/reload-plugins`.
 
 ## Plugins
 
 | Name | Description |
 |------|-------------|
-| **cf** | `/cf <goal>` — research (scout) → plan → High-only `ask` → worktree shards → review |
+| **cf** | `/cf <goal>` — research → plan → High-only `ask` → worktree shards → review |
+| **viz** | `viz-inline` + `viz-render` — chat shapes and browser HTML |
+| **obw** | `/obw:init`, `/obw:jot`, `/obw:pm` — Obsidian vault productivity |
 
 ## Develop locally
 
