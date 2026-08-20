@@ -33,7 +33,7 @@ Run everything directly in the main context — the flow is interactive (`ask`) 
    - Empty `TF` means vault root; otherwise `mkdir -p "$VAULT_PATH/$TF"`.
    - For each of `task.md`, `doc.md`, `adr.md`:
      ```bash
-     [ -e "$VAULT_PATH/$TF/task.md" ] || cp "${OMP_PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT}}/templates/task.md" "$VAULT_PATH/$TF/task.md"
+     [ -e "$VAULT_PATH/$TF/task.md" ] || cp "${OMP_PLUGIN_ROOT}/templates/task.md" "$VAULT_PATH/$TF/task.md"
      ```
      Never overwrite existing templates. Do not read template contents into the conversation — `cp` is enough.
 
@@ -64,6 +64,6 @@ Return a summary in this shape:
 Templates installed to <TF>/: task.md, doc.md, adr.md (only the missing ones).
 
 Next:
-  /obw:jot <text>        — quick capture to today's daily note, or a long-form note
-  /obw:pm                — task / doc / ADR management
+  /obw-jot <text>        — quick capture to today's daily note, or a long-form note
+  /obw-pm                — task / doc / ADR management
 ```

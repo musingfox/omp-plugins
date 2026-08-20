@@ -1,8 +1,8 @@
 # Obsidian Workspace
 
-Project-scoped Obsidian vault productivity for oh-my-pi — quick capture, long-form notes, and project management. The plugin is **skills-only**: it owns folder layout + file templates + PM conventions; all vault I/O runs the Obsidian CLI directly in the main context, deferring to the official `obsidian` skill for syntax. Each skill file is kept small so it doesn't burn your context budget.
+Project-scoped Obsidian vault productivity for oh-my-pi — quick capture, long-form notes, and project management. It owns folder layout, file templates, and PM conventions; all vault I/O runs the Obsidian CLI in the main context, deferring to the `obsidian` skill for syntax.
 
-Plugin identifier: `obw` (slash commands `/obw-init`, `/obw-jot`, `/obw-pm` (native OMP filenames, not Claude `plugin:skill` names)).
+Slash commands: `/obw-init`, `/obw-jot`, `/obw-pm`.
 
 ## Skills
 
@@ -14,14 +14,14 @@ Plugin identifier: `obw` (slash commands `/obw-init`, `/obw-jot`, `/obw-pm` (nat
 
 ## How It Works
 
-- **Vault I/O** goes through the `obsidian` CLI, run directly in the main context (no sub-agent). This plugin does not duplicate CLI syntax; it defers to the official `obsidian` skill and `obsidian help`.
+- **Vault I/O** goes through the `obsidian` CLI, run directly in the main context (no sub-agent). This plugin does not duplicate CLI syntax; it defers to the `obsidian` skill.
 - **Daily notes** use Obsidian's **Daily Notes** core plugin (folder / filename / template). Quick capture calls `daily:append`.
 - **Templates** (`task`, `doc`, `adr`) live in your vault's Obsidian Templates folder. On `/obw-init` the plugin copies starter files from `templates/` only if the same name doesn't already exist — it never overwrites your edits.
-- **Dashboards** (optional) are **Obsidian Bases** (`.base` files — core in Obsidian 1.9+) generated from plugin-internal templates via shell substitution, so contents never enter Claude's context.
+- **Dashboards** (optional) are **Obsidian Bases** (`.base` files — core in Obsidian 1.9+) generated from plugin-internal templates via shell substitution, so contents never enter the session context.
 
 ## Prerequisites
 
-- Official `obsidian` plugin (from the `obsidian-skills` marketplace) — declared as a plugin dependency, so it auto-installs with this plugin as long as that marketplace is added (`omp plugin marketplace add`)
+- kepano's [obsidian-skills](https://github.com/kepano/obsidian-skills) linked as an OMP package (`package.json` with `"omp": {}` + `omp plugin link --local`)
 - [Obsidian](https://obsidian.md) app running (headless CLI also works)
 - Obsidian community plugin **`obsidian-cli`** installed and enabled. The plugin's name is `obsidian-cli` but the executable it installs is `obsidian` (invoked as `obsidian vault=<name> ...`). This is **not** the unrelated standalone `obsidian-cli` binary by Yakitrak.
 - **Templates** core plugin enabled (required for `/obw-pm` — `task` / `doc` / `adr` templates)
@@ -32,27 +32,10 @@ Plugin identifier: `obw` (slash commands `/obw-init`, `/obw-jot`, `/obw-pm` (nat
 
 ```bash
 omp plugin link --local /path/to/omp-plugins/obw
+omp plugin link --local /path/to/obsidian-skills
 ```
 
-## Permissions (recommended)
-
-Vault operations shell out to the `obsidian` CLI plus a few Unix helpers. To avoid repeated permission prompts, add these to user `settings.json` (OMP tool approval / user settings) once:
-
-```json
-{
-  "permissions": {
-    "allow": [
-      "Bash(obsidian:*)",
-      "Bash(cat:*)",
-      "Bash(jq:*)",
-      "Bash(cp:*)",
-      "Bash(sed:*)"
-    ]
-  }
-}
-```
-
-Or run `/fewer-permission-prompts` after a stuck `/obw-init` and it will scan transcripts and propose the same list.
+Vault operations use `obsidian`, `jq`, `cp`, and `sed`. Approve those tools when OMP prompts.
 
 ## Configuration
 
