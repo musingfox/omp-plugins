@@ -50,7 +50,7 @@ notes:                                   # leave empty — the human fills it
 ## Bidirectional flow
 
 1. Agent writes the markdown file (canonical source), `choice`/`notes` empty.
-2. `bash "${OMP_PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT}}/lib/render.sh" <file.md> <name>` starts the server
+2. `bash "${OMP_PLUGIN_ROOT}/lib/render.sh" <file.md> <name>` starts the server
    and opens the interactive page (http://, so Save works).
 3. Human reads the body, picks an option, writes notes.
 4. Human clicks **儲存回饋 (Save)** → `POST /api/save` writes `choice`/`notes`

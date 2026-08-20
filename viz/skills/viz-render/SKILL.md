@@ -1,3 +1,4 @@
+[viz/skills/viz-render/SKILL.md#0852]
 ---
 name: viz-render
 description: >-
@@ -5,7 +6,7 @@ description: >-
   Triggers when the user asks to view, render, or preview a document as HTML;
   when the user asks to visualize, diagram, chart, or draw architecture,
   flows, sequence/class/state/ER diagrams; when resolving plan files from
-  ~/.omp/plans/ (fallback ~/.claude/plans/); or proactively when about to output a table with 4+ rows
+  ~/.omp/plans/; or proactively when about to output a table with 4+ rows
   or 3+ columns, a structured comparison, an audit, a feature matrix, or any
   formatted content exceeding ~50 lines in the terminal.
 ---
@@ -20,7 +21,7 @@ mode. One skill, one script, three input shapes.
 
 - User asks to "view as HTML", "render in browser", "preview as a web page"
 - User asks for a diagram (flowchart, sequence, architecture, ER, state, …)
-- User references a plan by name (resolve from `~/.omp/plans/`, fallback `~/.claude/plans/`)
+- User references a plan by name (resolve from `~/.omp/plans/`)
 - Content contains complex tables, Mermaid, or math formulas
 - **Proactive**: terminal output would contain a table with 4+ rows or 3+ columns
 - **Proactive**: comparison, audit, feature matrix, or status report as ASCII
@@ -33,6 +34,8 @@ mode. One skill, one script, three input shapes.
 - User explicitly wants terminal/text output
 - User is asking to edit or modify the content, not view it
 
+Plugin root is the package directory that contains `lib/render.sh` and `skills/` (this file is `skills/viz-render/SKILL.md`). Use `${OMP_PLUGIN_ROOT}` if set.
+
 ## Input Shapes → Workflow
 
 ### Shape A: file path
@@ -40,27 +43,25 @@ mode. One skill, one script, three input shapes.
 User gave an absolute/relative path to a markdown file.
 
 ```bash
-bash "${OMP_PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT}}/lib/render.sh" "{file_path}" "doc-{name}"
+bash "${OMP_PLUGIN_ROOT}/lib/render.sh" "{file_path}" "doc-{name}"
 ```
 
 ### Shape B: plan name (bare name, no path separator, no `.md`)
 
-List available plans. Prefer `$HOME/.omp/plans`, fallback `$HOME/.claude/plans`:
+List available plans from `$HOME/.omp/plans`:
 
 ```bash
 INPUT="$ARGUMENTS"
 PLANS_DIR="${OMP_PLANS_DIR:-$HOME/.omp/plans}"
-[ -d "$PLANS_DIR" ] || PLANS_DIR="$HOME/.claude/plans"
-
 if [ -z "$INPUT" ]; then
     echo "Available plans in $PLANS_DIR:"
     ls -t "$PLANS_DIR"/*.md 2>/dev/null | head -20 | xargs -n1 basename | sed 's/\.md$//' | sed 's/^/  - /'
 elif [ -f "$INPUT" ]; then
     DOC_FILE="$INPUT"; DOC_NAME=$(basename "$DOC_FILE" .md)
-    bash "${OMP_PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT}}/lib/render.sh" "$DOC_FILE" "doc-$DOC_NAME"
+    bash "${OMP_PLUGIN_ROOT}/lib/render.sh" "$DOC_FILE" "doc-$DOC_NAME"
 else
     DOC_FILE="$PLANS_DIR/$INPUT.md"
-    [ -f "$DOC_FILE" ] && bash "${OMP_PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT}}/lib/render.sh" "$DOC_FILE" "doc-$INPUT" \
+    [ -f "$DOC_FILE" ] && bash "${OMP_PLUGIN_ROOT}/lib/render.sh" "$DOC_FILE" "doc-$INPUT" \
       || { echo "Plan not found: $INPUT.md"; ls -t "$PLANS_DIR"/*.md 2>/dev/null | head -10 | xargs -n1 basename | sed 's/\.md$//' | sed 's/^/  - /'; }
 fi
 ```
@@ -85,7 +86,7 @@ For bare Mermaid code, wrap as:
 …write to `/tmp/viz-diagram-{name}.md`, then:
 
 ```bash
-bash "${OMP_PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT}}/lib/render.sh" "/tmp/viz-diagram-{name}.md" "diagram-{name}"
+bash "${OMP_PLUGIN_ROOT}/lib/render.sh" "/tmp/viz-diagram-{name}.md" "diagram-{name}"
 ```
 
 ## Generating Mermaid From Scratch
@@ -120,7 +121,7 @@ Available recipes:
 Workflow:
 
 1. Author the markdown with the recipe's frontmatter and structure.
-2. `bash "${OMP_PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT}}/lib/render.sh" <file.md> <output-name>`
+2. `bash "${OMP_PLUGIN_ROOT}/lib/render.sh" <file.md> <output-name>`
 3. User edits in HTML → clicks Export → updated markdown is on clipboard.
 4. User pastes back to chat → agent overwrites the source `.md` → re-render.
 
@@ -134,8 +135,7 @@ override needed. Set `VIZ_PORT=<port>` only to pin a specific base port.
 
 ## Recipe round-trip (OMP)
 
-A recipe's **儲存** button writes back to the source `.md` via `/api/save`.
-OMP has no Claude `Monitor` — pick one:
+A recipe's **儲存** button writes back to the source `.md` via `/api/save`. Pick one:
 
 1. **Simple (default)**: after render, `ask` once ("Click 儲存 when done editing"), then `read` the source path and diff.
 2. **Automated**: `hub start` a short-lived mtime watcher, then `hub wait` with `pattern: recipe-saved`. On match, `read` the source, diff, report, then `hub stop`.

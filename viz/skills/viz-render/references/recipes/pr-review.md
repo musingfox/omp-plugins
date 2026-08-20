@@ -55,7 +55,7 @@ title: <free text — shown in header>
 ## Bidirectional flow
 
 1. Agent writes the markdown file (canonical source).
-2. `bash "${OMP_PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT}}/lib/render.sh" <file.md> review-<name>` opens
+2. `bash "${OMP_PLUGIN_ROOT}/lib/render.sh" <file.md> review-<name>` opens
    the interactive HTML in the browser.
 3. User edits in the HTML: cycles statuses, edits any field inline, filters by
    severity.
