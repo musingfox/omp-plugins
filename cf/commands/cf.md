@@ -19,7 +19,7 @@ Skip: pi-dispatch, `cf-pi-*.sh`, Agent Teams, Monitor, Claude implement fallback
 | Implement | `task` default worker, **one git worktree per shard** | `$SESSION/shards/<id>/outcome.md` |
 | Review | `task` agent `reviewer` | `$SESSION/review.md` |
 
-Load agent prompts from `${OMP_PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT}}/agents/{research,plan,review}.md`.
+Load agent prompts from `$PLUGIN/agents/{research,plan,review}.md`. Plugin root is the package directory that contains `commands/`, `agents/`, and `scripts/` (this file lives in `commands/cf.md`).
 
 ## Setup
 
@@ -27,7 +27,8 @@ Goal = `$ARGUMENTS`. Derive `<slug>`: kebab-case, 1–3 words.
 
 ```bash
 REPO="$(git rev-parse --show-toplevel)"
-PLUGIN="${OMP_PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT}}"
+PLUGIN="${OMP_PLUGIN_ROOT}"
+# If unset: package directory that contains this file at commands/cf.md.
 SESSION="$REPO/.omp/cf/<slug>"
 mkdir -p "$SESSION/shards"
 printf '%s\n' "<goal>" > "$SESSION/goal.md"
