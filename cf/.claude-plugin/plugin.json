@@ -1,7 +1,0 @@
-{
-  "name": "cf",
-  "version": "0.1.0",
-  "description": "OMP-native contract pipeline: research → plan → High-only gate → worktree shards → review",
-  "author": { "name": "Nick Huang" },
-  "commands": ["./commands/"]
-}

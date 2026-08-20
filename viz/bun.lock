@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "viz-tests",
+      "name": "viz",
       "devDependencies": {
         "marked": "11.1.1",
       },
