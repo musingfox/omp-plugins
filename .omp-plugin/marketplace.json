@@ -1,0 +1,18 @@
+{
+  "name": "omp-plugins",
+  "owner": {
+    "name": "Nick Huang",
+    "email": "nick@example.com"
+  },
+  "metadata": {
+    "description": "Native oh-my-pi plugins (task, ask, hub) — not Claude Code mirrors"
+  },
+  "plugins": [
+    {
+      "name": "cf",
+      "description": "Contract pipeline: research → plan → High-only gate → worktree shards → review",
+      "source": "./cf",
+      "version": "0.1.0"
+    }
+  ]
+}
