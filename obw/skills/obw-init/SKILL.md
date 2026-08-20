@@ -1,6 +1,6 @@
 ---
-name: init
-description: Interactively create `.obsidian.yaml` and install starter templates (task / doc / adr) for this project. Triggers via `/obw:init` or when another obw skill reports missing config.
+name: obw-init
+description: Interactively create `.obsidian.yaml` and install starter templates (task / doc / adr) for this project. Triggers via `/obw-init` or when another obw skill reports missing config.
 ---
 
 # init — Initialize Obsidian Workspace
@@ -19,7 +19,7 @@ Run everything directly in the main context — the flow is interactive (`ask`) 
    (Linux: `~/.config/obsidian/obsidian.json`; Windows: `%APPDATA%\obsidian\obsidian.json`.) Resolve `$VAULT_PATH` from the chosen entry.
 
 3. **Ask config options** (via `ask`):
-   - Project identifier for `/obw:pm`? (default = current directory basename; allow "skip" to omit the `pm` section)
+   - Project identifier for `/obw-pm`? (default = current directory basename; allow "skip" to omit the `pm` section)
    - Default folder for long-form notes? (default `Inbox`)
    - Filename strategy for notes? options: `title` / `slug` / `timestamp-title`
 
@@ -29,7 +29,7 @@ Run everything directly in the main context — the flow is interactive (`ask`) 
    ```bash
    TF=$(jq -r .folder "$VAULT_PATH/.obsidian/templates.json" 2>/dev/null)
    ```
-   - If `.obsidian/templates.json` is missing → tell the user to enable the **Templates** core plugin in Obsidian, then re-run `/obw:init`. Stop.
+   - If `.obsidian/templates.json` is missing → tell the user to enable the **Templates** core plugin in Obsidian, then re-run `/obw-init`. Stop.
    - Empty `TF` means vault root; otherwise `mkdir -p "$VAULT_PATH/$TF"`.
    - For each of `task.md`, `doc.md`, `adr.md`:
      ```bash

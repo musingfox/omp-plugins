@@ -1,11 +1,11 @@
 ---
-name: jot
-description: Unified entry point for Obsidian daily-note captures and long-form notes. Triggers on "記一下 / log / 紀錄 / capture this / 寫到 journal" (→ cap mode) and "建立筆記 / new note / 寫一份筆記 / create a note on" (→ note mode). Also via `/obw:jot`. Requires `.obsidian.yaml`.
+name: obw-jot
+description: Unified entry point for Obsidian daily-note captures and long-form notes. Triggers on "記一下 / log / 紀錄 / capture this / 寫到 journal" (→ cap mode) and "建立筆記 / new note / 寫一份筆記 / create a note on" (→ note mode). Also via `/obw-jot`. Requires `.obsidian.yaml`.
 ---
 
 # jot — Capture or Note
 
-Single triage skill. Decide the mode, then run the `obsidian` CLI directly — no sub-agent. Before any CLI call, invoke the `obsidian` skill to load exact syntax — never run `obsidian help`/`--help` to discover it. If `.obsidian.yaml` is missing, tell the user to run `/obw:init` and stop.
+Single triage skill. Decide the mode, then run the `obsidian` CLI directly — no sub-agent. Before any CLI call, invoke the `obsidian` skill to load exact syntax — never run `obsidian help`/`--help` to discover it. If `.obsidian.yaml` is missing, tell the user to run `/obw-init` and stop.
 
 ## Mode selection
 
