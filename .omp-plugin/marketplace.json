@@ -1,8 +1,7 @@
 {
   "name": "omp-plugins",
   "owner": {
-    "name": "Nick Huang",
-    "email": "nick@example.com"
+    "name": "Nick Huang"
   },
   "metadata": {
     "description": "Native oh-my-pi plugins (task, ask, hub) — not Claude Code mirrors"
