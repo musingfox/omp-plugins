@@ -14,7 +14,7 @@ Slash commands: `/obw-init`, `/obw-jot`, `/obw-pm`.
 
 ## How It Works
 
-- **Vault I/O** goes through the `obsidian` CLI, run directly in the main context (no sub-agent). This plugin does not duplicate CLI syntax; it defers to the `obsidian` skill.
+- **Vault I/O** goes through the `obsidian` CLI in the main context (no `task` spawn). This plugin does not duplicate CLI syntax; it defers to the `obsidian` skill.
 - **Daily notes** use Obsidian's **Daily Notes** core plugin (folder / filename / template). Quick capture calls `daily:append`.
 - **Templates** (`task`, `doc`, `adr`) live in your vault's Obsidian Templates folder. On `/obw-init` the plugin copies starter files from `templates/` only if the same name doesn't already exist — it never overwrites your edits.
 - **Dashboards** (optional) are **Obsidian Bases** (`.base` files — core in Obsidian 1.9+) generated from plugin-internal templates via shell substitution, so contents never enter the session context.

@@ -5,7 +5,7 @@ description: Obsidian Workspace PM — tasks, documents, and ADRs in your Obsidi
 
 # pm — Obsidian Project Management
 
-Run the `obsidian` CLI directly — no sub-agent. Before any CLI call, invoke the `obsidian` skill to load exact syntax — never run `obsidian help`/`--help` to discover it. This skill owns only the PM conventions: folder layout, template names, property schema, ADR numbering, and dashboard generation.
+Run the `obsidian` CLI directly in the main context (do not spawn a `task` except the bulk-scan rule below). Before any CLI call, invoke the `obsidian` skill to load exact syntax — never run `obsidian help`/`--help` to discover it. This skill owns only the PM conventions: folder layout, template names, property schema, ADR numbering, and dashboard generation.
 
 **CLI gotcha**: `file=` resolves like a wikilink — bare note name only, no path, no `.md`. Use `path=` for vault-root-relative paths. If a command returns `File not found` after a `create`, fix the parameter — never re-run `create` (it makes `name 1.md` duplicates).
 
@@ -89,4 +89,4 @@ Conversation-mode status (user asks in chat, not Obsidian): run the equivalent `
 3. Never bypass the CLI with filesystem Read/Write against the vault. Only exception: reading `.obsidian/templates.json` / `obsidian.json` during `/obw-init`. Dashboard creation uses the CLI via shell-piped content.
 4. Confirm destructive intents (delete, archive-move, ADR supersede) before executing.
 5. A claim of "created" / "updated" needs a receipt — the CLI's own success output counts; an error output never does. Report failures as failures.
-6. Bulk scans (e.g. auditing all archived tasks) may be delegated to a read-only Explore agent to keep the listing out of context; single-entity operations never need one.
+6. Bulk scans (e.g. auditing all archived tasks) may be delegated to a read-only builtin `scout` `task` to keep the listing out of context; single-entity operations never need one.
