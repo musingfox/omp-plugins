@@ -26,7 +26,7 @@ Reload in-session: `/reload-plugins`.
 | Name | Slash commands | Description |
 |------|----------------|-------------|
 | **cf** | `/cf <goal>` | research → plan → High-only `ask` → worktree shards → review |
-| **viz** | skills `viz-inline`, `viz-render` | chat shapes and browser HTML |
+| **viz** | `/viz-inline`, `/viz-render` | chat shapes and browser HTML |
 | **obw** | `/obw-init`, `/obw-jot`, `/obw-pm` | Obsidian vault productivity |
 | **obsidian** (kepano) | skills `obsidian-cli`, `obsidian-markdown`, `obsidian-bases`, `json-canvas`, `defuddle` | vault I/O syntax for `obw` |
 
