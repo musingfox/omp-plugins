@@ -1,4 +1,3 @@
-[viz/skills/viz-render/SKILL.md#0852]
 ---
 name: viz-render
 description: >-
