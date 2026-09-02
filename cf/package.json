@@ -1,6 +1,9 @@
 {
   "name": "cf",
-  "private": true,
   "version": "0.1.0",
-  "omp": {}
+  "private": true,
+  "type": "module",
+  "omp": {
+    "extensions": ["./index.ts"]
+  }
 }
