@@ -1,0 +1,7 @@
+{
+  "name": "spec",
+  "private": true,
+  "version": "0.1.3",
+  "description": "Architecture spec library and domain glossary for OMP projects",
+  "omp": {}
+}
