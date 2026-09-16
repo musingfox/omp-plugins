@@ -29,12 +29,22 @@ export type CfManifest = {
   resume_phase?: Phase;
   isolation_available?: boolean;
 };
+export type CfVerification = {
+  status?: "PASS" | "FAIL" | "TEST_STALLED" | "UNPARSED";
+  test_count?: string;
+  test_unparsed?: boolean;
+  test_stalled?: boolean;
+  bounded?: boolean;
+  failures?: string[];
+  integrated_tree?: boolean;
+};
 export type CfQuestion = { id: string; question: string; options: string[]; recommended?: number };
 export type CfEnvelope = {
   status: Status;
   artifact_uri?: string | null;
   blockers?: string[];
   manifest?: CfManifest;
+  verification?: CfVerification;
   questions?: CfQuestion[];
 };
 export type CfState = {
@@ -46,6 +56,7 @@ export type CfState = {
   planUri?: string;
   typeManifest?: CfManifest;
   workerEvidenceUris: string[];
+  verificationEvidence: CfVerification[];
   highDecisions: unknown[];
   waveStatus: string[];
   terminalError?: string;
@@ -65,7 +76,6 @@ export type CfHost = {
       questions: Array<{ id: string; question: string; options: Array<{ label: string }>; recommended?: number }>,
     ) => Promise<{ kind: "submit" | "chat"; results?: Array<{ id?: string; selectedOptions?: string[]; customInput?: string }> } | undefined>;
   };
-  task: (params: TaskParams, options?: { awaitCompletion?: boolean }) => Promise<unknown>;
 };
 
 export const envelopeSchema = {
@@ -103,6 +113,19 @@ export const envelopeSchema = {
         isolation_available: { type: "boolean" },
       },
     },
+    verification: {
+      type: "object",
+      additionalProperties: false,
+      properties: {
+        status: { enum: ["PASS", "FAIL", "TEST_STALLED", "UNPARSED"] },
+        test_count: { type: "string" },
+        test_unparsed: { type: "boolean" },
+        test_stalled: { type: "boolean" },
+        bounded: { type: "boolean" },
+        failures: { type: "array", items: { type: "string" } },
+        integrated_tree: { type: "boolean" },
+      },
+    },
     questions: {
       type: "array",
       items: {
@@ -124,7 +147,7 @@ export const envelopeSchema = {
 const PARENT_TOOLS = ["task", "ask", "hub"] as const;
 
 export function createCfState(goal: string, flowId = crypto.randomUUID()): CfState {
-  return { flowId, phase: "PREFLIGHT", goal, highDecisions: [], waveStatus: [], workerEvidenceUris: [] };
+  return { flowId, phase: "PREFLIGHT", goal, highDecisions: [], waveStatus: [], workerEvidenceUris: [], verificationEvidence: [] };
 }
 
 type TaskResult = { details?: { results?: Array<{ structuredOutput?: { data?: unknown } }> } };
@@ -219,17 +242,20 @@ function record(state: CfState, phase: Phase, result: CfEnvelope): void {
     if (result.artifact_uri) state.planUri = result.artifact_uri;
     if (result.manifest) state.typeManifest = result.manifest;
   }
+  if (result.verification) state.verificationEvidence.push(result.verification);
 }
 
 function addEvidence(state: CfState, envelopes: CfEnvelope[]): void {
   for (const envelope of envelopes) {
     const uri = envelope.artifact_uri;
     if (uri && !state.workerEvidenceUris.includes(uri)) state.workerEvidenceUris.push(uri);
+    if (envelope.verification) state.verificationEvidence.push(envelope.verification);
   }
 }
 
 function resetPlanExecution(state: CfState): void {
   state.workerEvidenceUris = [];
+  state.verificationEvidence = [];
   state.waveStatus = [];
 }
 
@@ -372,16 +398,25 @@ export async function runFlow(goal: string, ctx: CfHost, state = createCfState(g
         }
         state.waveStatus.push("PASS");
       }
-
-      state.phase = "VERIFY";
+ 
+      let verificationFailures = 0;
       for (;;) {
         const verified = await runTask(
           ctx,
-          `Verify plan ${state.planUri} and all worker evidence ${state.workerEvidenceUris.join(", ")}; rerun the plan's full-repository validation command.`,
+          `Verify plan ${state.planUri} against the final integrated tree and all worker evidence ${state.workerEvidenceUris.join(", ")}; run the plan's bounded full-repository validation command. Return bounded verification evidence with verification.status PASS or FAIL, test_count (the runner's own summary, or "unparsed"), test_unparsed when no count was emitted, test_stalled when the deadline was exceeded, bounded=true, failures as short identifiers, and integrated_tree=true.`,
         );
-        if (verified.status === "PASS") {
+        if (verified.verification) state.verificationEvidence.push(verified.verification);
+        const stalled = verified.verification?.test_stalled || verified.verification?.status === "TEST_STALLED";
+        const bounded = verified.verification?.bounded !== false;
+        if (verified.status === "PASS" && !stalled && bounded) {
           state.phase = "CLEANUP";
           return state;
+        }
+        if (verified.status === "NEEDS_REPLAN") continue planning;
+        verificationFailures++;
+        if (verificationFailures >= 2) {
+          state.terminalError = "verification failed persistently; NEEDS_REPLAN";
+          continue planning;
         }
         const route = await chooseRoute(ctx, verified, "VERIFY");
         if (route === "RETRY") continue;

@@ -314,4 +314,25 @@ describe("cf orchestration state machine", () => {
     await command("third", ctx);
     expect(notifications.filter(([message]) => message === "cf already running")).toHaveLength(1);
   });
+  test("verification preserves bounded test evidence and targets the integrated tree", async () => {
+    const { ctx, calls } = context([
+      preflight(),
+      { status: "PASS", artifact_uri: "file:///discovery" },
+      { status: "PASS", artifact_uri: "file:///plan", manifest: { waves: [] } },
+      { status: "AWAITING_DECISION", questions: [] },
+      { status: "PASS", manifest: { route: "APPROVED" } },
+      { status: "PASS", verification: { status: "PASS", test_count: "24 passed, 0 failed", bounded: true, integrated_tree: true } },
+      { status: "CLEANED" },
+    ], true);
+    const state = await runFlow("goal", ctx);
+    expect(state.phase).toBe("COMPLETED");
+    expect(state.verificationEvidence).toEqual([
+      { status: "PASS", test_count: "24 passed, 0 failed", bounded: true, integrated_tree: true },
+    ]);
+    expect(String(calls.find(c => String(c.params.task).includes("final integrated tree"))?.params.task)).toContain("test_count");
+  });
+
+  test("state starts with bounded verification evidence", () => {
+    expect(createCfState("goal").verificationEvidence).toEqual([]);
+  });
 });
