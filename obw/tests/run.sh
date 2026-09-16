@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+set -euo pipefail
+cd "$(dirname "$0")"
+for test in relations.test.sh migration.test.sh publish.test.sh warrant.test.sh; do
+  bash "$test"
+done

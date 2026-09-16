@@ -1,92 +1,85 @@
 ---
 name: obw-pm
-description: Obsidian Workspace PM — tasks, documents, and ADRs in your Obsidian vault. Triggers on task/doc/ADR lifecycle requests ("add a task", "create an ADR", "archive X", "list in-progress tasks", "refresh dashboard") and via `/obw-pm`. Requires `.obsidian.yaml` with a `pm.project` section.
+description: Obsidian Workspace PM — tasks, documents, and ADRs. Supports kebab-case names, relations, ticket publishing, frontier queries, and warranted ADRs.
 ---
 
 # pm — Obsidian Project Management
 
-Run the `obsidian` CLI directly in the main context (do not spawn a `task` except the bulk-scan rule below). Before any CLI call, invoke the `obsidian` skill to load exact syntax — never run `obsidian help`/`--help` to discover it. This skill owns only the PM conventions: folder layout, template names, property schema, ADR numbering, and dashboard generation.
+Run the `obsidian` CLI directly in the main context (never spawn a task). Before any CLI call, read the official Obsidian CLI skill for exact syntax; never run `obsidian help`/`--help`. All vault I/O uses the CLI; do not use filesystem reads or writes against the vault.
 
-**CLI gotcha**: `file=` resolves like a wikilink — bare note name only, no path, no `.md`. Use `path=` for vault-root-relative paths. If a command returns `File not found` after a `create`, fix the parameter — never re-run `create` (it makes `name 1.md` duplicates).
+Read `.obsidian.yaml` before every operation. Missing config or `pm.project` means tell the user to run `/obw-init` and stop; never guess the vault. `file=` is a bare wikilink name (without path or `.md`); use `path=` for vault-relative paths. `property:set` replaces a value, so read existing lists before adding entries. One property per call; use `type=list` for lists and `type=date` for dates.
 
-**`property:set` gotcha**: one property per call, no batch form. Pass `type=list` for `tags`, `type=date` for `due`/`completed` — omit `type=` and it's stored as plain text.
-
-## Config (`.obsidian.yaml`)
-
-```yaml
-vault: <VAULT_NAME>
-pm:
-  project: <PROJECT_NAME>
-```
-
-Missing config or `pm.project` → tell the user to run `/obw-init` and stop. Never guess the vault.
-
-## Vault Layout
+## Vault layout
 
 ```
-pm/
-├── {project}/
-│   ├── tasks/       # active tasks
-│   ├── archive/     # completed tasks
-│   └── docs/        # docs + ADRs
-└── dashboard.base   # cross-project dashboard (optional)
+pm/{project}/
+├── dashboard.base
+├── tasks/
+│   └── archive/
+└── docs/
 ```
 
-Folders are created on demand — `create` / `move` auto-create missing parent folders. No `mkdir` needed.
+Folders are created on demand by `create`/`move`. If a project dashboard is missing, regenerate it from `${OMP_PLUGIN_ROOT}/templates/dashboard-project.base`; do not overwrite an existing dashboard during ordinary status operations. Preserve existing dashboards and templates unless the user explicitly requests regeneration.
 
-## Template Names
+## Names and templates
 
-Fixed: `task`, `doc`, `adr`. Installed into the vault's Obsidian Templates folder by `/obw-init`. Use via CLI `create template=<name>`.
+All new note filenames are kebab-case: lowercase, whitespace and punctuation become `-`, repeated separators collapse, and Unicode is retained. Human-readable titles go in `title` frontmatter. Examples: `Implement Auth` → `implement-auth.md`; ADR `Switch to SQLite` → `adr-0007-switch-to-sqlite.md`.
 
-If `obsidian vault=<v> templates` doesn't list one of these, `/obw-init` hasn't run (or the user removed them). Tell the user to re-run init rather than inlining template content here.
+Fixed templates are `task`, `doc`, and `adr`, installed by `/obw-init`; if one is absent, stop and ask the user to re-run init rather than inline a template.
 
 ## Operations
 
-Use **one call** per known-name read — never chain `search → read`. The pm-specific bits:
+- **Create task**: `create` `pm/{project}/tasks/{kebab}.md` with `template=task`; set `title`, `project`, and requested `priority`, `due`, `tags`.
+- **Create doc**: create `pm/{project}/docs/{kebab}.md` with `template=doc`; set `title` and `project`.
+- **Create ADR**: apply the Decision Warrant first, then search existing ADRs for the next number, zero-padded to four digits; create `pm/{project}/docs/adr-{NNNN}-{kebab}.md` with `template=adr`, then set `title`, `project`, and `status`.
+- **List**: search with `query="[type:task] [project:{project}] [status:<s>]" format=json`.
+- **Archive**: confirm first; inspect dependents, set `status=done` and `completed`, then move to `pm/{project}/tasks/archive`.
+- **Delete/replace/supersede**: confirm first. If delete is unavailable, move to archive; never silently replace an existing note.
 
-- **Create task** → `create` at `pm/{project}/tasks/{name}.md` with `template=task`, then set properties `project` / `priority` / `due` / `tags`.
-- **Create doc** → `create` at `pm/{project}/docs/{name}.md` with `template=doc`, then set `project`.
-- **Create ADR** → `create` at `pm/{project}/docs/adr-{NNNN}-{title}.md` with `template=adr`, then set `project` / `status`. See ADR numbering below.
-- **List tasks** → `search` with `query="[type:task] [project:{project}] [status:<s>]" format=json`.
-- **Archive** → set `status=done` and `completed`, then `move` to `pm/{project}/archive`.
-- **Delete** → confirm first; fall back to `move` if the build lacks `delete`.
+A known-name read is one direct CLI call; never search first. A create error stops publishing: report landed and unlanded filenames and never retry the create. Report success only with the CLI receipt.
 
-### ADR numbering
+## Relations
 
-Before creating an ADR, `search` with `query="[type:adr] [project:{project}]" format=json` and take max(number)+1, zero-padded to 4 digits.
+Tasks use wikilink properties: `blocked_by` (list), `related` (list), and `parent` (single). Never create inverse `blocks` or `subtasks` fields; infer inverse edges from backlinks or Bases `file.hasLink()`.
 
-## Property Schema
+- Resolve uncertain targets with search and refuse links to missing notes.
+- Values are `[[kebab-name]]`. Since `property:set` replaces, read the current `blocked_by`/`related` list and set the complete list when adding one.
+- Adding a blocker sets `status=blocked`. Removing the last blocker asks whether to return to `todo` or `in-progress`.
+- Before archiving `X`, search `[blocked_by:X]`; list dependents and ask whether to remove `X` from each. Unblock only those left with no blockers; never edit dependents silently.
+- **Cycles** — before adding `A` to `B.blocked_by`, walk A's blocker chain. If it reaches B, refuse and report the cycle.
+- `parent` is only for epic/subtask decomposition; use `related` otherwise.
 
-**Task**: `type: task`, `status` (todo/in-progress/blocked/done), `priority` (high/medium/low), `project`, `due` (date), `tags` (list), `created`, `completed`.
-**Doc**: `type: doc`, `project`, `created`, `updated`.
-**ADR**: `type: adr`, `project`, `status` (proposed/accepted/deprecated/superseded), `created`, `deciders`.
+## To Tickets (preview → ask → publish)
 
-Property names are lowercase. Do not invent fields — dashboards depend on this schema.
+Split an in-context spec, task, or named vault reference into independently demoable vertical slices. Look for prefactors first. Each slice has a complete narrow path through schema/API/UI/tests, is verifiable alone, fits one context window, and is not a horizontal layer. Missing reference or empty source writes nothing.
+
+Before any vault write, preview a numbered list with **Title**, **Blocked by**, and **What it delivers**. Ask via OMP `ask` with at least: approve, too coarse, too fine, edges wrong. Revise and repeat until approved. Publish blockers first. For each ticket: create one kebab-cased task with `template=task`, set `title`/`project`, and fill `## Description` plus `## Acceptance Criteria`; if blocked, set complete `blocked_by` list once and `status=blocked`; if splitting a same-project task, set `parent` to `[[source]]`. Never modify the source. End with a receipt of created filenames.
+
+## Frontier
+
+Startable non-done tasks are one search:
+
+```
+query="[type:task] [project:{project}] -[status:done] -[blocked_by:\"[[\"]" format=json
+```
+
+`blocked_by` values are wikilinks; an empty list is not excluded by mere property presence.
+
+## ADR Decision Warrant
+
+An ADR is created only when **all three** conditions hold:
+
+1. **Hard to reverse** — changing the decision later has real cost (migration, data loss, or external commitment).
+2. **Confusing without context** — a future reader would reasonably ask why it was done this way.
+3. **Real trade-off** — at least two genuine options were considered and weighed; “do nothing” alone does not count.
+Apply the warrant before creating or superseding an ADR. If condition 1 or 2 fails, decline and redirect to a plain doc. If condition 3 fails, decline and redirect to a spec (an invariant/constraint), unless the user explicitly reaffirms after seeing the failed condition. The first format/bootstrap ADR is exempt. Existing ADR audits may flag failures but never edit them automatically.
+
+## Schema
+
+Task: `title`, `type: task`, `status` (todo/in-progress/blocked/done), `priority` (high/medium/low), `project`, `due`, `tags`, `parent`, `blocked_by`, `related`, `created`, `completed`.
+Doc: `title`, `type: doc`, `project`, `created`, `updated`.
+ADR: `title`, `type: adr`, `project`, `status` (proposed/accepted/deprecated/superseded), `created`, `deciders`.
 
 ## Dashboards
 
-Dashboards are **Obsidian Bases** (`.base` files — core in 1.9+). For Bases schema / filter / formula syntax, defer to the `obsidian-bases` skill.
-
-Generated from plugin templates via shell (template contents never enter context):
-
-- **Cross-project** → `pm/dashboard.base`:
-  ```bash
-  obsidian vault={vault} create path="pm/dashboard.base" \
-    content="$(cat "${OMP_PLUGIN_ROOT}/templates/dashboard-cross.base")" overwrite
-  ```
-- **Per-project** → `pm/{project}/dashboard.base`:
-  ```bash
-  obsidian vault={vault} create path="pm/{project}/dashboard.base" \
-    content="$(sed "s/__PROJECT__/{project}/g" "${OMP_PLUGIN_ROOT}/templates/dashboard-project.base")" overwrite
-  ```
-
-Conversation-mode status (user asks in chat, not Obsidian): run the equivalent `search` and format a summary table in the reply. Don't write a `.base` file unless asked to.
-
-## Important Rules
-
-1. Read `.obsidian.yaml` before any operation.
-2. Never `search` to locate a note whose name is known — go straight to `read`.
-3. Never bypass the CLI with filesystem Read/Write against the vault. Only exception: reading `.obsidian/templates.json` / `obsidian.json` during `/obw-init`. Dashboard creation uses the CLI via shell-piped content.
-4. Confirm destructive intents (delete, archive-move, ADR supersede) before executing.
-5. A claim of "created" / "updated" needs a receipt — the CLI's own success output counts; an error output never does. Report failures as failures.
-6. Bulk scans (e.g. auditing all archived tasks) may be delegated to a read-only builtin `scout` `task` to keep the listing out of context; single-entity operations never need one.
+Dashboards are Obsidian Bases. Generate only when asked (or when a project dashboard is missing), using shell-piped `${OMP_PLUGIN_ROOT}/templates/dashboard-cross.base` or `dashboard-project.base` content and the CLI. Conversation-mode status searches and summarizes without writing a dashboard.

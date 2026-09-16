@@ -1,6 +1,6 @@
 ---
+title: 
 type: adr
-project: 
 status: proposed
 created: {{date}}
 deciders: 

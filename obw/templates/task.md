@@ -1,11 +1,14 @@
 ---
+title: 
 status: todo
 priority: medium
 project: 
 type: task
 due: 
 tags: []
-created: {{date}}
+parent: 
+blocked_by: []
+related: []
 ---
 
 # {{title}}

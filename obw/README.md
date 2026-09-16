@@ -8,9 +8,9 @@ Slash commands: `/obw-init`, `/obw-jot`, `/obw-pm`.
 
 | Skill | Purpose |
 |-------|---------|
-| `/obw-init` | Pick a vault, write `.obsidian.yaml`, install starter templates into your vault's Templates folder |
-| `/obw-jot <text>` | Quick capture (timestamped bullet to today's daily note) or long-form note — triages by input shape |
-| `/obw-pm [intent]` | Task / document / ADR lifecycle, project-scoped; free-form natural language |
+| `/obw-init` | Pick a vault, write `.obsidian.yaml`, install templates, bootstrap a project skeleton, and migrate pre-0.9 layouts |
+| `/obw-jot <text>` | Quick capture (timestamped bullet to today's daily note) or long-form note |
+| `/obw-pm [intent]` | Task / document / ADR lifecycle, relations, warranted ADRs, and previewed ticket publishing |
 
 ## How It Works
 
@@ -60,19 +60,23 @@ Daily note folder / filename / template are **not** in `.obsidian.yaml` — they
 pm/
 ├── dashboard.base        # Cross-project dashboard (optional, Bases)
 └── {project}/
-    ├── dashboard.base    # Project dashboard (optional, Bases)
+    ├── dashboard.base    # Project dashboard
     ├── tasks/            # Active tasks
-    ├── archive/          # Completed tasks
+    │   └── archive/      # Completed tasks
     └── docs/             # Docs + ADRs
 ```
+
+`/obw-init` creates this skeleton. Re-running it offers safe pre-0.9 migration: archive moves use the Obsidian CLI, missing titles are optionally backfilled, and stale dashboards are regenerated only after confirmation. Existing filenames and hand-edited templates are preserved.
 
 ## Property Schema
 
 Dashboards and searches depend on these frontmatter fields. If you edit the installed templates, keep the field names.
 
-- **Task** — `type: task`, `status` (`todo` / `in-progress` / `blocked` / `done`), `priority` (`high` / `medium` / `low`), `project`, `due` (date), `tags` (list), `created`, `completed`
-- **Doc** — `type: doc`, `project`, `created`, `updated`
-- **ADR** — `type: adr`, `project`, `status` (`proposed` / `accepted` / `deprecated` / `superseded`), `created`, `deciders`
+- **Task** — `title`, `type: task`, `status` (`todo` / `in-progress` / `blocked` / `done`), `priority` (`high` / `medium` / `low`), `project`, `due` (date), `tags` (list), `parent` (link), `blocked_by` (list of links), `related` (list of links), `created`, `completed`
+- **Doc** — `title`, `type: doc`, `project`, `created`, `updated`
+- **ADR** — `title`, `type: adr`, `project`, `status` (`proposed` / `accepted` / `deprecated` / `superseded`), `created`, `deciders`
+
+New notes use kebab-case filenames while `title` retains the human-readable name. ADR creation requires all three warrant conditions: hard to reverse, confusing without context, and a real trade-off; failures redirect to a doc or spec.
 
 ## Examples
 

@@ -1,47 +1,24 @@
 ---
 name: obw-init
-description: Interactively create `.obsidian.yaml` and install starter templates (task / doc / adr) for this project. Triggers via `/obw-init` or when another obw skill reports missing config.
+description: Interactively create `.obsidian.yaml`, install templates, bootstrap a project skeleton, and migrate pre-0.9 Obsidian Workspace layouts.
 ---
 
 # init — Initialize Obsidian Workspace
 
-Run everything directly in the main context — the flow is interactive (`ask`) by design.
+Run directly in the main context; the flow is interactive via OMP `ask`.
 
-## Execution
-
-1. **Handle existing config** — if `.obsidian.yaml` exists in the project root, show a one-line summary (vault name + project) and ask whether to overwrite.
-
-2. **Pick a vault** — list vaults from Obsidian's config and ask the user:
-   ```bash
-   cat ~/Library/Application\ Support/obsidian/obsidian.json \
-     | jq -r '.vaults | to_entries[] | "\(.key)\t\(.value.path)"'
-   ```
-   (Linux: `~/.config/obsidian/obsidian.json`; Windows: `%APPDATA%\obsidian\obsidian.json`.) Resolve `$VAULT_PATH` from the chosen entry.
-
-3. **Ask config options** (via `ask`):
-   - Project identifier for `/obw-pm`? (default = current directory basename; allow "skip" to omit the `pm` section)
-   - Default folder for long-form notes? (default `Inbox`)
-   - Filename strategy for notes? options: `title` / `slug` / `timestamp-title`
-
-   Mention: daily note folder / filename / template are configured in Obsidian's **Daily Notes** core plugin, not here. Quick capture always prepends `HH:MM` and writes `#tag` tokens inline (Obsidian indexes them automatically).
-
-4. **Install starter templates** — read the Templates folder from `$VAULT_PATH/.obsidian/templates.json`:
-   ```bash
-   TF=$(jq -r .folder "$VAULT_PATH/.obsidian/templates.json" 2>/dev/null)
-   ```
-   - If `.obsidian/templates.json` is missing → tell the user to enable the **Templates** core plugin in Obsidian, then re-run `/obw-init`. Stop.
-   - Empty `TF` means vault root; otherwise `mkdir -p "$VAULT_PATH/$TF"`.
-   - For each of `task.md`, `doc.md`, `adr.md`:
-     ```bash
-     [ -e "$VAULT_PATH/$TF/task.md" ] || cp "${OMP_PLUGIN_ROOT}/templates/task.md" "$VAULT_PATH/$TF/task.md"
-     ```
-     Never overwrite existing templates. Do not read template contents into the conversation — `cp` is enough.
-
-5. **Write `.obsidian.yaml`** using the template below. Omit the `pm` section if skipped.
-
-6. **Offer `.gitignore` entry** — ask whether to add `.obsidian.yaml` to `.gitignore`.
-
-## Config Template
+1. **Existing config** — If `.obsidian.yaml` exists, show vault/project and ask whether to overwrite. If declined, read its `vault` and `pm.project`, then continue with bootstrap/migration.
+2. **Choose vault** — Read Obsidian's config (`~/Library/Application Support/obsidian/obsidian.json`; Linux `~/.config/obsidian/obsidian.json`; Windows `%APPDATA%/obsidian/obsidian.json`) and ask the user to choose one. Resolve both vault name and path; never guess.
+3. **Ask options** — project identifier (default current directory basename; `skip` omits `pm`), long-form default folder (`Inbox`), and filename strategy (`title`, `slug`, or `timestamp-title`). Explain that Daily Notes settings remain in Obsidian and quick capture keeps inline tags.
+4. **Install templates** — Read `$VAULT_PATH/.obsidian/templates.json`. If missing, tell the user to enable Templates and stop. Empty `.folder` means vault root. Create the folder if needed and copy `${OMP_PLUGIN_ROOT}/templates/task.md`, `doc.md`, and `adr.md` only when each destination is absent. Never overwrite user templates.
+5. **Bootstrap skeleton** — If `pm` was not skipped, create `pm/$PROJECT/tasks/archive` and `pm/$PROJECT/docs` with `mkdir -p`, then create `pm/$PROJECT/dashboard.base` from `${OMP_PLUGIN_ROOT}/templates/dashboard-project.base` with `__PROJECT__` substituted. Do not use `overwrite`; an already-existing dashboard is success. These are the only vault filesystem writes; notes and dashboards use the CLI.
+6. **Pre-0.9 migration** — Determine whether `pm/$PROJECT` existed before bootstrap and inspect independently:
+   - Legacy `archive/`: ask first, list entries, move each note with the Obsidian CLI (never filesystem `mv`), then `rmdir` the old folder. Report moved/failed counts.
+   - Missing `title`: ask first; for notes lacking it, set one property per note from the un-kebabbed filename (`implement-auth` → `Implement Auth`). Existing titles and non-kebab filenames remain unchanged. Report counts only.
+   - Stale dashboards: ask before replacing; regenerate project and cross-project dashboards with CLI `overwrite` only after confirmation, warning hand edits will be discarded.
+   Each migration component may be skipped independently; report only performed work.
+7. **Write `.obsidian.yaml`** with the template below, omitting `pm` when skipped.
+8. **Offer** adding `.obsidian.yaml` to `.gitignore`.
 
 ```yaml
 # Obsidian Workspace configuration
@@ -55,15 +32,15 @@ pm:
   project: <PROJECT_NAME>
 ```
 
-## Confirmation Output
-
-Return a summary in this shape:
+Confirm with:
 
 ```
 .obsidian.yaml created (vault=<NAME>, project=<PROJ>).
 Templates installed to <TF>/: task.md, doc.md, adr.md (only the missing ones).
+Workspace ready at pm/<PROJ>/: tasks/, docs/, dashboard.base.
+Migrated: <N> notes moved to tasks/archive/, <N> titles backfilled, dashboards regenerated. (omit if nothing migrated)
 
 Next:
-  /obw-jot <text>        — quick capture to today's daily note, or a long-form note
-  /obw-pm                — task / doc / ADR management
+  /obw-jot <text> — quick capture to today's daily note, or a long-form note
+  /obw-pm — task / doc / ADR management
 ```

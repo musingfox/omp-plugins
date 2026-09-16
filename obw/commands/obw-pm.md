@@ -1,5 +1,5 @@
 ---
-description: "Task / document / ADR lifecycle in the Obsidian vault"
+description: "Task / document / ADR lifecycle, relations, and ticket publishing"
 argument-hint: "[intent]"
 ---
 

@@ -1,0 +1,3 @@
+title: Implement Auth API
+Blocked by: db-migration
+What it delivers: A complete auth API vertical slice

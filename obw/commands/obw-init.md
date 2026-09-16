@@ -1,5 +1,5 @@
 ---
-description: "Pick a vault, write `.obsidian.yaml`, install starter templates"
+description: "Initialize workspace, install templates, and migrate legacy layout"
 ---
 
 Read `skill://obw-init` and follow it completely. User arguments: $ARGUMENTS
