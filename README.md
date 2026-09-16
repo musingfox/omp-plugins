@@ -12,6 +12,10 @@ Claude Code ports live in [cc-plugins](https://github.com/musingfox/cc-plugins).
 omp plugin link --local /path/to/omp-plugins/cf
 omp plugin link --local /path/to/omp-plugins/viz
 omp plugin link --local /path/to/omp-plugins/obw
+omp plugin link --local /path/to/omp-plugins/spec
+omp plugin link --local /path/to/omp-plugins/diagnose
+omp plugin link --local /path/to/omp-plugins/deepen
+omp plugin link --local /path/to/omp-plugins/spiral
 omp plugin link --local /path/to/obsidian-skills   # after adding package.json with "omp": {}
 omp plugin list
 omp plugin doctor
@@ -28,6 +32,10 @@ Reload in-session: `/reload-plugins`.
 | **cf** | `/cf <goal>` | research → plan → High-only `ask` → worktree shards → review |
 | **viz** | `/viz-inline`, `/viz-render` | chat shapes and browser HTML |
 | **obw** | `/obw-init`, `/obw-jot`, `/obw-pm` | Obsidian vault productivity |
+| **spec** | — | Architecture contracts and domain glossary |
+| **diagnose** | `/diagnose-now` | Evidence-only bug diagnosis and `/cf` handoff |
+| **deepen** | — | Architecture survey from user scope or git hotspots |
+| **spiral** | `/spiral <question>` | Decision rounds, probes, and throwaway prototypes |
 | **obsidian** (kepano) | skills `obsidian-cli`, `obsidian-markdown`, `obsidian-bases`, `json-canvas`, `defuddle` | vault I/O syntax for `obw` |
 
 Slash names are markdown filenames; skill names are skill directory names. OMP does not namespace as `plugin:name`.
