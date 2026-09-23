@@ -19,9 +19,7 @@ omp plugin link --local /path/to/omp-plugins/spiral
 omp plugin link --local /path/to/omp-plugins/adr
 omp plugin link --local /path/to/omp-plugins/agent-browser
 omp plugin link --local /path/to/omp-plugins/apple-podcasts
-omp plugin link --local /path/to/omp-plugins/fizzy
 omp plugin link --local /path/to/omp-plugins/hook-guard
-omp plugin link --local /path/to/omp-plugins/omp-quota
 omp plugin link --local /path/to/omp-plugins/pi-dispatch
 omp plugin link --local /path/to/omp-plugins/wizard
 omp plugin link --local /path/to/obsidian-skills   # after adding package.json with "omp": {}
@@ -47,9 +45,7 @@ Reload in-session: `/reload-plugins`.
 | **adr** | — | Repository ADR lifecycle and consistency audits |
 | **agent-browser** | — | agent-browser, Playwright, and web-test workflows |
 | **apple-podcasts** | — | Apple Podcasts episode audio URL resolution |
-| **fizzy** | — | Fizzy CLI operations |
 | **hook-guard** | `/hook-guard` | Guided Git hook setup and commit checks |
-| **omp-quota** | `/quota` | Provider quota widget and refresh command |
 | **pi-dispatch** | — | Bounded task/workpool dispatch workflow |
 | **wizard** | — | Human-operated setup and credential wizards |
 | **obsidian** (kepano) | skills `obsidian-cli`, `obsidian-markdown`, `obsidian-bases`, `json-canvas`, `defuddle` | vault I/O syntax for `obw` |
