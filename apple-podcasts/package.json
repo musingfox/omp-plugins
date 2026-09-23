@@ -1,0 +1,7 @@
+{
+  "name": "@omp/apple-podcasts",
+  "version": "0.1.1",
+  "description": "Fetch Apple Podcasts episode audio download URLs via iTunes API and RSS feeds",
+  "license": "MIT",
+  "omp": {}
+}
