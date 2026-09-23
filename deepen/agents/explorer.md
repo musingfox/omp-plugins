@@ -1,7 +1,7 @@
 ---
 name: explorer
 description: "Walk one scope, note friction at seams, and write findings to the supplied report artifact. Never return the walk in the caller context."
-tools: Read, Write, Grep, Glob, Bash
+omp: task
 ---
 
 # Explorer contract
