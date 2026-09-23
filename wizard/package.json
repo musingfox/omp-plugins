@@ -1,0 +1,8 @@
+{
+  "name": "wizard",
+  "private": true,
+  "version": "0.1.1",
+  "description": "Generate interactive bash wizards for human-driven setup, credentials, CI secrets, and migrations.",
+  "license": "MIT",
+  "omp": {}
+}
