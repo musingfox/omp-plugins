@@ -117,6 +117,17 @@ exist yet, so nothing can test it. Once it lands, fill the `verify` in.
 Before adding a check: run it against the current code. **A check that is red
 on day one is a wrong check, not wrong code.**
 
+The Markdown entry is the source of truth for the invariant and its `verify:` binding. A
+check must exercise an observable repository contract; do not replace it with a grep for
+implementation wording. When the real source of truth is not executable yet, keep
+`verify: null` and record the binding plan in the entry body.
+
+Treat a dispatch verdict as evidence from a routing operation, never as a recommendation.
+Record the OMP command or primitive, the requested path or scope, and the resulting
+`PASS`, `FAIL`, `SKIP`, or empty slice. Workers receive constraints by dispatching
+`${OMP_PLUGIN_ROOT}/scripts/spec.sh slice <path>...`; the accepted entry and its check
+remain authoritative.
+
 ## Lifecycle
 
 Anyone proposes (`status: proposed`), main accepts. Accepting is editing one
