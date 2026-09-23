@@ -15,7 +15,7 @@ Run directly in the main context; the flow is interactive via OMP `ask`.
 6. **Pre-0.9 migration** — Determine whether `pm/$PROJECT` existed before bootstrap and inspect independently:
    - Legacy `archive/`: ask first, list entries, move each note with the Obsidian CLI (never filesystem `mv`), then `rmdir` the old folder. Report moved/failed counts.
    - Missing `title`: ask first; for notes lacking it, set one property per note from the un-kebabbed filename (`implement-auth` → `Implement Auth`). Existing titles and non-kebab filenames remain unchanged. Report counts only.
-   - Stale dashboards: ask before replacing; regenerate project and cross-project dashboards with CLI `overwrite` only after confirmation, warning hand edits will be discarded.
+   - Missing template views: list project view names with `obsidian vault=<VAULT_NAME> read path="pm/<PROJECT>/dashboard.base" | grep -E 'name:|^Error'` and template names with `grep '^    name:' "${OMP_PLUGIN_ROOT}/templates/dashboard-project.base"`; compare names without quotes. An error means the dashboard is missing: recreate it and stop. If views are missing, report names, ask before regenerating with CLI `overwrite`, warning hand edits will be discarded. Apply the same independent check to `pm/dashboard.base` and `dashboard-cross.base`.
    Each migration component may be skipped independently; report only performed work.
 7. **Write `.obsidian.yaml`** with the template below, omitting `pm` when skipped.
 8. **Offer** adding `.obsidian.yaml` to `.gitignore`.

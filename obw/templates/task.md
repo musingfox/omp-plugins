@@ -9,6 +9,7 @@ tags: []
 parent: 
 blocked_by: []
 related: []
+created: {{date}}
 ---
 
 # {{title}}
@@ -22,4 +23,3 @@ related: []
 - [ ] 
 
 ## Notes
-

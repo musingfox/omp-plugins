@@ -82,4 +82,9 @@ ADR: `title`, `type: adr`, `project`, `status` (proposed/accepted/deprecated/sup
 
 ## Dashboards
 
-Dashboards are Obsidian Bases. Generate only when asked (or when a project dashboard is missing), using shell-piped `${OMP_PLUGIN_ROOT}/templates/dashboard-cross.base` or `dashboard-project.base` content and the CLI. Conversation-mode status searches and summarizes without writing a dashboard.
+Dashboards are Obsidian Bases (`.base`, core in Obsidian 1.9+). Generate only when asked, or recreate a missing project dashboard before reporting the PM operation complete. Use shell-piped `${OMP_PLUGIN_ROOT}/templates/dashboard-cross.base` and `dashboard-project.base` content with the CLI; never read template contents into the conversation.
+
+- **Cross-project**: `pm/dashboard.base`, generated from `dashboard-cross.base`.
+- **Per-project**: `pm/{project}/dashboard.base`, generated from `dashboard-project.base` after replacing `__PROJECT__`.
+
+For `refresh dashboard`, inspect the existing dashboard's view names with `obsidian vault=<vault> read path="..." | grep -E 'name:|^Error'`; an error means the file is missing and it may be recreated without confirmation. Compare against template view names using `grep '^    name:'` only. Report missing views and ask before using CLI `overwrite`, warning that hand edits will be discarded. Apply the same rules independently to project and cross-project dashboards; do not overwrite a dashboard whose views already match. Conversation-mode status searches summarize without writing dashboards.

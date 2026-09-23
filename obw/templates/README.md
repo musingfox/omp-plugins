@@ -20,11 +20,11 @@ Bases (`.base`) files are pure YAML — Obsidian's Templates plugin does not pro
 
 ## Required Frontmatter Fields
 
-If you rewrite these templates, keep these fields — `/obw-pm` search and Bases dashboards depend on them:
+If you rewrite these templates, keep these fields — `/obw-pm` search and Bases dashboards depend on this schema:
 
-- Tasks: `type: task`, `status`, `priority`, `project`, `tags`, `due`, `completed`
-- Docs: `type: doc`, `project`
-- ADRs: `type: adr`, `project`, `status`
+- Tasks: `type: task`, `status`, `priority`, `project`, `tags`, `due`, `created`, `completed`
+- Docs: `type: doc`, `project`, `created`, `updated`
+- ADRs: `type: adr`, `project`, `status`, `created`
 
 ## Regenerating
 
