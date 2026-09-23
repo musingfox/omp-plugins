@@ -22,12 +22,20 @@ type Status =
 export type CfWave = { work_id: string; contract_uri: string; dependency_uris: string[] };
 export type CfManifest = {
   waves?: CfWave[][];
+  /** Explicit seats keep discovery, planning, implementation, and review accountable. */
+  seat_contracts?: {
+    research?: string;
+    plan?: string;
+    review?: string;
+    delivery?: string;
+  };
   route?: "APPROVED" | "RETRY" | "REPLAN" | "ABORTED";
   decision_uri?: string;
   intent_uri?: string;
   preflight_uri?: string;
   resume_phase?: Phase;
   isolation_available?: boolean;
+  delivery_gate?: "REQUIRED" | "APPROVED" | "REJECTED";
 };
 export type CfVerification = {
   status?: "PASS" | "FAIL" | "TEST_STALLED" | "UNPARSED";
@@ -37,6 +45,9 @@ export type CfVerification = {
   bounded?: boolean;
   failures?: string[];
   integrated_tree?: boolean;
+  /** Review must pass both implementation correctness and delivery readiness. */
+  correctness_review?: "PASS" | "FAIL";
+  delivery_review?: "PASS" | "FAIL";
 };
 export type CfQuestion = { id: string; question: string; options: string[]; recommended?: number };
 export type CfEnvelope = {
@@ -59,7 +70,9 @@ export type CfState = {
   verificationEvidence: CfVerification[];
   highDecisions: unknown[];
   waveStatus: string[];
-  terminalError?: string;
+  /** The plan's named seats, retained so later review can audit ownership. */
+  seatContracts: CfManifest["seat_contracts"];
+  deliveryApproved: boolean;
 };
 
 type TaskParams = Record<string, unknown>;
@@ -111,6 +124,17 @@ export const envelopeSchema = {
         preflight_uri: { type: "string" },
         resume_phase: { type: "string" },
         isolation_available: { type: "boolean" },
+        seat_contracts: {
+          type: "object",
+          additionalProperties: false,
+          properties: {
+            research: { type: "string" },
+            plan: { type: "string" },
+            review: { type: "string" },
+            delivery: { type: "string" },
+          },
+        },
+        delivery_gate: { enum: ["REQUIRED", "APPROVED", "REJECTED"] },
       },
     },
     verification: {
@@ -124,6 +148,8 @@ export const envelopeSchema = {
         bounded: { type: "boolean" },
         failures: { type: "array", items: { type: "string" } },
         integrated_tree: { type: "boolean" },
+        correctness_review: { enum: ["PASS", "FAIL"] },
+        delivery_review: { enum: ["PASS", "FAIL"] },
       },
     },
     questions: {
@@ -147,7 +173,17 @@ export const envelopeSchema = {
 const PARENT_TOOLS = ["task", "ask", "hub"] as const;
 
 export function createCfState(goal: string, flowId = crypto.randomUUID()): CfState {
-  return { flowId, phase: "PREFLIGHT", goal, highDecisions: [], waveStatus: [], workerEvidenceUris: [], verificationEvidence: [] };
+  return {
+    flowId,
+    phase: "PREFLIGHT",
+    goal,
+    highDecisions: [],
+    waveStatus: [],
+    workerEvidenceUris: [],
+    verificationEvidence: [],
+    seatContracts: undefined,
+    deliveryApproved: false,
+  };
 }
 
 type TaskResult = { details?: { results?: Array<{ structuredOutput?: { data?: unknown } }> } };
@@ -240,7 +276,10 @@ function record(state: CfState, phase: Phase, result: CfEnvelope): void {
   if (phase === "PROBE" && result.artifact_uri) state.discoveryUri = result.artifact_uri;
   if (phase === "TYPE") {
     if (result.artifact_uri) state.planUri = result.artifact_uri;
-    if (result.manifest) state.typeManifest = result.manifest;
+    if (result.manifest) {
+      state.typeManifest = result.manifest;
+      state.seatContracts = result.manifest.seat_contracts;
+    }
   }
   if (result.verification) state.verificationEvidence.push(result.verification);
 }
@@ -280,7 +319,7 @@ async function phaseLoop(
 async function scopeGate(state: CfState, ctx: CfHost): Promise<"APPROVED" | "REPLAN" | "ABORTED"> {
   const gate = await runTask(
     ctx,
-    `Prepare High-decision and scope gate from plan ${state.planUri}; include scope confirmation and direction risks.`,
+    `Prepare the human High-decision and scope gate from plan ${state.planUri}; include scope confirmation, direction risks, and named seat contracts for research, plan, review, and delivery.`,
   );
   if (gate.status !== "AWAITING_DECISION" || !ctx.hasUI || !ctx.ui.askDialog) return "ABORTED";
   const answer = await ctx.ui.askDialog(
@@ -302,6 +341,31 @@ async function scopeGate(state: CfState, ctx: CfHost): Promise<"APPROVED" | "REP
     : resolved.manifest?.route === "REPLAN"
       ? "REPLAN"
       : "ABORTED";
+}
+async function deliveryGate(state: CfState, ctx: CfHost): Promise<boolean> {
+  const gate = await runTask(
+    ctx,
+    `Prepare the human delivery gate for plan ${state.planUri}; review the dual-axis correctness and delivery evidence, declared documentation impact, and final user handoff. Return AWAITING_DECISION with approve or replan choices.`,
+  );
+  if (gate.status !== "AWAITING_DECISION" || !ctx.hasUI || !ctx.ui.askDialog) return false;
+  const answer = await ctx.ui.askDialog(
+    (gate.questions ?? []).map((q) => ({
+      id: q.id,
+      question: q.question,
+      options: q.options.map((label) => ({ label })),
+      recommended: q.recommended,
+    })),
+  );
+  if (!answer || answer.kind !== "submit") return false;
+  const resolved = await runTask(
+    ctx,
+    `Resolve delivery gate ${gate.artifact_uri ?? "unknown"} with answers ${JSON.stringify(answer)}; return route metadata.`,
+  );
+  if (resolved.manifest?.route === "APPROVED") {
+    state.deliveryApproved = true;
+    return true;
+  }
+  return false;
 }
 
 export async function runFlow(goal: string, ctx: CfHost, state = createCfState(goal)): Promise<CfState> {
@@ -340,10 +404,9 @@ export async function runFlow(goal: string, ctx: CfHost, state = createCfState(g
       const typed = await phaseLoop(state, ctx, "TYPE", () =>
         runTask(
           ctx,
-          `Type discovery ${state.discoveryUri}${state.highDecisions.length ? ` with decision URI ${String(state.highDecisions.at(-1))}` : ""} using isolation_available=${isolated}; write WorkContracts, dependency waves, hermetic tests, documentation impact and one full-repository validation command.`,
+          `Type discovery ${state.discoveryUri}${state.highDecisions.length ? ` with decision URI ${String(state.highDecisions.at(-1))}` : ""} using isolation_available=${isolated}; write WorkContracts, dependency waves, hermetic tests, documentation impact, named seat contracts (research/plan/review/delivery), and one full-repository validation command.`,
         ),
       );
-      if (typed.status !== "PASS") return state;
       const gate = await scopeGate(state, ctx);
       if (gate === "REPLAN") continue;
       if (gate !== "APPROVED") {
@@ -361,7 +424,7 @@ export async function runFlow(goal: string, ctx: CfHost, state = createCfState(g
                   context: "Execute only each supplied WorkContract.",
                   tasks: wave.map((work) =>
                     taskParams(
-                      `WorkContract ${work.contract_uri}; dependencies ${work.dependency_uris.join(", ")}. Run the hermetic test command and update declared docs. On non-PASS restore only this worker's edits using its start snapshot; never restore to HEAD.`,
+                      `WorkContract ${work.contract_uri}; dependencies ${work.dependency_uris.join(", ")}. Run the hermetic test command and update declared docs. On PASS record worker evidence; on FAIL or TEST_STALLED explain the bounded failure and offer RETRY or REPLAN. On non-PASS restore only this worker's edits using its start snapshot; never restore to HEAD.`,
                       true,
                     ),
                   ),
@@ -383,7 +446,7 @@ export async function runFlow(goal: string, ctx: CfHost, state = createCfState(g
             for (;;) {
               const worker = await runTask(
                 ctx,
-                `Implement WorkContract ${work.contract_uri}; dependencies ${work.dependency_uris.join(", ")}. Run the hermetic test command and update declared docs. On non-PASS restore only this worker's edits using its start snapshot; never restore to HEAD.`,
+                `Implement WorkContract ${work.contract_uri}; dependencies ${work.dependency_uris.join(", ")}. Run the hermetic test command and update declared docs. On PASS record worker evidence; on FAIL or TEST_STALLED explain the bounded failure and offer RETRY or REPLAN. On non-PASS restore only this worker's edits using its start snapshot; never restore to HEAD.`,
                 isolated ? true : undefined,
               );
               addEvidence(state, [worker]);
@@ -403,12 +466,15 @@ export async function runFlow(goal: string, ctx: CfHost, state = createCfState(g
       for (;;) {
         const verified = await runTask(
           ctx,
-          `Verify plan ${state.planUri} against the final integrated tree and all worker evidence ${state.workerEvidenceUris.join(", ")}; run the plan's bounded full-repository validation command. Return bounded verification evidence with verification.status PASS or FAIL, test_count (the runner's own summary, or "unparsed"), test_unparsed when no count was emitted, test_stalled when the deadline was exceeded, bounded=true, failures as short identifiers, and integrated_tree=true.`,
+          `Verify plan ${state.planUri} as a dual-axis review against the final integrated tree and all worker evidence ${state.workerEvidenceUris.join(", ")}; run the plan's bounded full-repository validation command. Review correctness (behavior and tests) and delivery (declared docs, scope, and user handoff). Return bounded verification evidence with verification.status PASS or FAIL, correctness_review and delivery_review each PASS or FAIL, test_count (the runner's own summary, or "unparsed"), test_unparsed when no count was emitted, test_stalled when the deadline was exceeded, bounded=true, failures as short identifiers, and integrated_tree=true. If a worker stalled or failed, identify it and recommend NEEDS_REPLAN rather than hiding the failure.`,
         );
         if (verified.verification) state.verificationEvidence.push(verified.verification);
         const stalled = verified.verification?.test_stalled || verified.verification?.status === "TEST_STALLED";
         const bounded = verified.verification?.bounded !== false;
-        if (verified.status === "PASS" && !stalled && bounded) {
+        const correctnessFailed = verified.verification?.correctness_review === "FAIL";
+        const deliveryFailed = verified.verification?.delivery_review === "FAIL";
+        if (verified.status === "PASS" && !stalled && bounded && !correctnessFailed && !deliveryFailed) {
+          if (state.typeManifest?.delivery_gate === "REQUIRED" && !(await deliveryGate(state, ctx))) continue planning;
           state.phase = "CLEANUP";
           return state;
         }
