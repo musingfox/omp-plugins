@@ -7,6 +7,8 @@ description: Unified entry point for Obsidian daily-note captures and long-form 
 
 Single triage skill. Decide the mode, then run the `obsidian` CLI directly in the main context (do not spawn a `task`). Before any CLI call, invoke the `obsidian` skill to load exact syntax — never run `obsidian help`/`--help` to discover it. If `.obsidian.yaml` is missing, tell the user to run `/obw-init` and stop.
 
+Read `vault` from `.obsidian.yaml` before mode selection. Every CLI call in both modes passes `vault=<VAULT_NAME>` as its first argument; the CLI otherwise targets the most recently focused vault. Missing `vault` means tell the user to run `/obw-init` and stop. Never guess the vault.
+
 ## Mode selection
 
 Inspect the user's input:
@@ -21,7 +23,7 @@ Append a timestamped bullet to today's daily note. Nothing more. Daily note fold
 
 1. If body is empty, prompt for content.
 2. Compose bullet: `- HH:MM — <body>` (any `#tag` tokens stay inline — Obsidian indexes them automatically).
-3. Append the bullet to today's daily note via `daily:append` (creates the note if missing).
+3. Append the bullet to today's daily note via `obsidian vault=<VAULT_NAME> daily:append` (creates the note if missing).
 4. Confirm with the appended line. Return `[[<daily-note-basename>]]`.
 
 Example: `記一下 #worklog 完成了 API-first 架構 draft` → `- 14:32 — 完成了 API-first 架構 draft #worklog`
@@ -48,9 +50,9 @@ note:
    - `slug` → `<kebab>-YYYYMMDD.md`
    - `timestamp-title` → `YYYYMMDD-<kebab>.md`
 
-3. **Resolve path** = `<folder>/<filename>`. Check for conflict (`read`) — if it exists, ask the user (overwrite / rename / cancel via ``ask``).
+3. **Resolve path** = `<folder>/<filename>`. Check for conflict (`obsidian vault=<VAULT_NAME> read`) — if it exists, ask the user (overwrite / rename / cancel via ``ask``).
 
-4. **Create the note** at that path (`create`) with content:
+4. **Create the note** at that path (`obsidian vault=<VAULT_NAME> create`) with content:
    ```markdown
    ---
    created: YYYY-MM-DD

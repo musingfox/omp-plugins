@@ -7,7 +7,7 @@ description: Obsidian Workspace PM — tasks, documents, and ADRs. Supports keba
 
 Run the `obsidian` CLI directly in the main context (never spawn a task). Before any CLI call, read the official Obsidian CLI skill for exact syntax; never run `obsidian help`/`--help`. All vault I/O uses the CLI; do not use filesystem reads or writes against the vault.
 
-Read `.obsidian.yaml` before every operation. Missing config or `pm.project` means tell the user to run `/obw-init` and stop; never guess the vault. `file=` is a bare wikilink name (without path or `.md`); use `path=` for vault-relative paths. `property:set` replaces a value, so read existing lists before adding entries. One property per call; use `type=list` for lists and `type=date` for dates.
+Read `.obsidian.yaml` before every operation. Missing config or `pm.project` means tell the user to run `/obw-init` and stop; never guess the vault. `file=` is a bare wikilink name (without path or `.md`); use `path=` for vault-relative paths. `property:set` replaces a value, so read existing lists before adding entries. One property per call; use `type=list` for lists and `type=date` for dates. Wikilinks in a list property (`blocked_by`, `related`) need a JSON array as the value, even for one link: a bare or comma-separated wikilink is stored as one string. Example: `obsidian vault={vault} property:set path="pm/{project}/tasks/{kebab}.md" name=blocked_by value='["[[first-blocker]]","[[second-blocker]]"]' type=list`.
 
 ## Vault layout
 
@@ -43,7 +43,7 @@ A known-name read is one direct CLI call; never search first. A create error sto
 Tasks use wikilink properties: `blocked_by` (list), `related` (list), and `parent` (single). Never create inverse `blocks` or `subtasks` fields; infer inverse edges from backlinks or Bases `file.hasLink()`.
 
 - Resolve uncertain targets with search and refuse links to missing notes.
-- Values are `[[kebab-name]]`. Since `property:set` replaces, read the current `blocked_by`/`related` list and set the complete list when adding one.
+- Values are `[[kebab-name]]`. Since `property:set` replaces, read the current `blocked_by`/`related` list and set the complete list, as a JSON array (see the `property:set` rule above), when adding one.
 - Adding a blocker sets `status=blocked`. Removing the last blocker asks whether to return to `todo` or `in-progress`.
 - Before archiving `X`, search `[blocked_by:X]`; list dependents and ask whether to remove `X` from each. Unblock only those left with no blockers; never edit dependents silently.
 - **Cycles** — before adding `A` to `B.blocked_by`, walk A's blocker chain. If it reaches B, refuse and report the cycle.
