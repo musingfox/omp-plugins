@@ -11,18 +11,15 @@ Claude Code ports live in [cc-plugins](https://github.com/musingfox/cc-plugins).
 ## Install
 
 ```bash
-omp plugin link --local /path/to/omp-plugins/cf
 omp plugin link --local /path/to/omp-plugins/viz
 omp plugin link --local /path/to/omp-plugins/obw
 omp plugin link --local /path/to/omp-plugins/spec
 omp plugin link --local /path/to/omp-plugins/diagnose
 omp plugin link --local /path/to/omp-plugins/deepen
-omp plugin link --local /path/to/omp-plugins/spiral
 omp plugin link --local /path/to/omp-plugins/adr
 omp plugin link --local /path/to/omp-plugins/agent-browser
 omp plugin link --local /path/to/omp-plugins/apple-podcasts
 omp plugin link --local /path/to/omp-plugins/hook-guard
-omp plugin link --local /path/to/omp-plugins/pi-dispatch
 omp plugin link --local /path/to/omp-plugins/wizard
 omp plugin link --local /path/to/obsidian-skills   # after adding package.json with "omp": {}
 omp plugin list
@@ -37,18 +34,15 @@ Reload in-session: `/reload-plugins`.
 
 | Name | Slash commands | Description |
 |------|----------------|-------------|
-| **cf** | `/cf <goal>` | research → plan → High-only `ask` → worktree shards → review |
 | **viz** | `/viz-inline`, `/viz-render` | chat shapes and browser HTML |
 | **obw** | `/issue`; Pi: `/obw-bind`, `/obw-unbind`, `/obw-sync`; OMP skills: `/obw-init`, `/obw-jot`, `/obw-pm` | Obsidian tasks; Pi-first writeback, OMP browsing/skills |
 | **spec** | — | Architecture contracts and domain glossary |
-| **diagnose** | `/diagnose-now` | Evidence-only bug diagnosis and `/cf` handoff |
+| **diagnose** | `/diagnose-now` | Evidence-only bug diagnosis and main-session handoff |
 | **deepen** | — | Architecture survey from user scope or git hotspots |
-| **spiral** | `/spiral <question>` | Decision rounds, probes, and throwaway prototypes |
 | **adr** | — | Repository ADR lifecycle and consistency audits |
 | **agent-browser** | — | agent-browser, Playwright, and web-test workflows |
 | **apple-podcasts** | — | Apple Podcasts episode audio URL resolution |
 | **hook-guard** | `/hook-guard` | Guided Git hook setup and commit checks |
-| **pi-dispatch** | — | Bounded task/workpool dispatch workflow |
 | **wizard** | — | Human-operated setup and credential wizards |
 | **obsidian** (kepano) | skills `obsidian-cli`, `obsidian-markdown`, `obsidian-bases`, `json-canvas`, `defuddle` | vault I/O syntax for `obw` |
 
@@ -57,5 +51,4 @@ Markdown slash names are filenames; extensions may also register commands. Skill
 ## Develop locally
 
 ```bash
-omp plugin link --local /path/to/omp-plugins/cf
 ```

@@ -1,7 +1,0 @@
-{
-  "name": "pi-dispatch",
-  "private": true,
-  "version": "0.1.0",
-  "description": "OMP-native heavy-work dispatch with task, workpool, agent, and hub lifecycle contracts",
-  "omp": {}
-}

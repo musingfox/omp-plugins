@@ -1,8 +1,0 @@
-{
-  "name": "spiral",
-  "private": true,
-  "version": "0.3.2",
-  "description": "Narrow vague questions into implementation-sized goals through deliberate divergence, decisions, probes, and prototypes.",
-  "license": "MIT",
-  "omp": {}
-}
