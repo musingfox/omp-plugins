@@ -5,9 +5,9 @@ description: Obsidian Workspace PM — tasks and documents. Supports kebab-case 
 
 # pm — Obsidian Project Management
 
-Run the `obsidian` CLI directly in the main context (never spawn a task). Before any CLI call, read the official Obsidian CLI skill for exact syntax; never run `obsidian help`/`--help`. All vault I/O uses the CLI; do not use filesystem reads or writes against the vault.
+Run the `obsidian` CLI directly in the main context (never spawn a task). Before any CLI call, read the official Obsidian CLI skill for exact syntax; never run `obsidian help`/`--help`.
 
-Read `.obsidian.yaml` before every operation. Missing config, `vault` or `pm.project` means tell the user to run `/obw-init` and stop; never guess the vault. Every CLI call passes `vault={vault}` as its first argument, as in `obsidian vault={vault} read path=...`; without it the CLI targets the most recently focused vault. `file=` is a bare wikilink name (without path or `.md`); use `path=` for vault-relative paths. `property:set` replaces a value, so read existing lists before adding entries. One property per call; use `type=list` for lists and `type=date` for dates. Wikilinks in a list property (`blocked_by`, `related`) need a JSON array as the value, even for one link: a bare or comma-separated wikilink is stored as one string. Example: `obsidian vault={vault} property:set path="pm/{project}/tasks/{kebab}.md" name=blocked_by value='["[[first-blocker]]","[[second-blocker]]"]' type=list`.
+Missing config, `vault` or `pm.project` means tell the user to run `/obw-init` and stop; never guess the vault. Every CLI call passes `vault={vault}` as its first argument, as in `obsidian vault={vault} read path=...`; without it the CLI targets the most recently focused vault. `file=` is a bare wikilink name (without path or `.md`); use `path=` for vault-relative paths. `property:set` replaces a value, so read existing lists before adding entries. One property per call; use `type=list` for lists and `type=date` for dates. Wikilinks in a list property (`blocked_by`, `related`) need a JSON array as the value, even for one link: a bare or comma-separated wikilink is stored as one string. Example: `obsidian vault={vault} property:set path="pm/{project}/tasks/{kebab}.md" name=blocked_by value='["[[first-blocker]]","[[second-blocker]]"]' type=list`.
 
 ## Vault layout
 
@@ -35,7 +35,7 @@ Fixed templates are `task` and `doc`, installed by `/obw-init`; if one is absent
 - **Archive**: confirm first; inspect dependents, set `status=done` and `completed`, then `obsidian vault={vault} move` to `pm/{project}/tasks/archive`.
 - **Delete**: confirm first, then `obsidian vault={vault} delete`; it moves the note to the trash. Never silently replace an existing note.
 
-A known-name read is one direct CLI call; never search first. A create error stops publishing: report landed and unlanded filenames and never retry the create. Report success only with the CLI receipt.
+A create error stops publishing: report landed and unlanded filenames and never retry the create.
 
 ## Relations
 
@@ -103,3 +103,11 @@ In those lines, `added` is only in the dashboard, `removed` is only in the templ
 The cross-project file follows the same steps with `path="pm/dashboard.base"`, `cross` in place of `project {project}`, and the cross-project command.
 
 Conversation-mode status searches summarize without writing dashboards. Do not rewrite an existing `.base` file unless asked (a `refresh dashboard` request is asking); the only unprompted write is recreating a project dashboard that has gone missing.
+
+## Important Rules
+
+1. Read `.obsidian.yaml` before any operation.
+2. Never `search` to locate a note whose name is known; a known-name read is one direct `read`.
+3. Never bypass the CLI with filesystem reads or writes against the vault. The only exceptions belong to `/obw-init`, which lists them under Filesystem Access. Dashboard creation uses the CLI with shell-piped content.
+4. Confirm destructive intents (delete, archive move) before executing.
+5. A claim of "created" or "updated" needs a receipt: the CLI's own success output counts; an error output never does. Report failures as failures.
