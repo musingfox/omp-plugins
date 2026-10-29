@@ -2,7 +2,7 @@
 
 本計畫讓 omp-plugins 追上 cc-plugins 的現況。cc-plugins 基準是 `b4555826`（2026-10-26），omp-plugins 基準是 `dadb051` 加上 `obw/` 的暫存變更。宿主版本是 omp 18.13.3、pi 1.4.0。
 
-下列現況由四個子 agent 比對兩個 repo 後整理，出處以 file:line 或 commit 標示。這些報告沒有經過獨立 context 複核，每個里程碑開工前要先對照程式碼確認。
+下列現況由四個子 agent 比對兩個 repo 後整理，出處以 file:line 或 commit 標示。完整報告留在 `docs/drift-2026-10-29/`。這些報告沒有經過獨立 context 複核，每個里程碑開工前要先對照程式碼確認。
 
 ## 1. 現況
 
@@ -60,12 +60,15 @@
 5. obw 移除 ADR 功能，交給 adr plugin。
 6. 刪除已停用的 pi-dispatch。
 7. 每個 plugin 記錄對應的 cc-plugins commit（見 §4）。
+8. obw 的檢查改釘 OMP 18.13.3 與 pi 1.4.0；OMP typecheck 只對 omp 目標開 `skipLibCheck`。理由見 `obw/docs/dual-host-plan.md` §9。
 
 ## 3. 里程碑
 
-每個里程碑只有一個可觀察的結果。完成條件一律包含在真實 omp session 裡跑過一次，不只跑測試。
+每個里程碑只有一個可觀察的結果。完成條件一律包含在真實 omp session 裡跑過一次，不只跑測試；非互動的 session 用 `omp -p --no-session "<prompt>"`。
 
-- **M0　obw 雙宿主變更落地。** 在 omp 18.13.3 重跑 pre-commit；通過就依 `obw/docs/dual-host-plan.md` 拆成原子 commit，不通過就回報型別錯誤。完成條件是工作目錄乾淨且 `bun test` 通過。
+Repo 的 pre-commit 會對每個 commit 跑 `bun run --cwd obw check`。新的 worktree 沒有 `obw/node_modules`，第一次 commit 前要先跑 `cd obw && bun install --frozen-lockfile`。
+
+- **M0　obw 雙宿主變更落地。** 已完成（`9ec6061`、`7c24fe8`、`ea3b76e`）。`9ec6061` 單獨 checkout 時仍釘 pi 1.1.0，本機無法跑它的 check；開 PR 前把 `7c24fe8` 併進去。
 - **M1　安全與資料錯寫修正。** 修 agent-browser 的憑證建議、obw jot 的 `vault=`、obw wikilink JSON 陣列、viz 兩個 feedback bug。完成條件是每項各有一個先紅後綠的測試或可重跑的檢查。
 - **M2　method 骨架在 OMP 跑通。** 移植 SKILL.md、narrow.md 與 review、divergence、probe、prototype 四個 agent，以 `task` 派出並用 inline `ask`。viz 決策頁、背景喚醒、gate 與巢狀派工先用 stub。完成條件是在 omp session 裡把一個問題收斂成 `contracts.json`。
 - **M3　method 補上 gate。** 移植 `check-contracts.sh`、`scope-gate.sh`、`revert-gate.sh`、`add-repros.sh` 與其測試。
@@ -79,7 +82,7 @@
 - **M11　移植 audit。**
 - **M12　移植 zen-agent。** 完成後讓 agent-browser 把可見瀏覽器交給它。
 
-M0 與 M1 先做；M2 到 M5 依序；其餘彼此獨立，可平行。
+執行順序是 M0、M1、M5、M2、M3、M4；其餘彼此獨立，可平行。M5 提到 M2 之前有兩個理由：cc 的交接對象是主 session，不依賴 method；OMP 依名稱去重 agent，先載入者勝（OMP 18.13.3 `src/task/discovery.ts:157-161`），spiral 的 divergence、probe、prototype 會遮住 method 的同名 agent。M4 要的 semver fixture 用 `git show dadb051:spiral/tests/render-decision.test.sh` 取回。
 
 ## 4. 防止再度漂移
 
