@@ -1,6 +1,6 @@
 ---
 name: obw-pm
-description: Obsidian Workspace PM — tasks, documents, and ADRs. Supports kebab-case names, relations, ticket publishing, frontier queries, and warranted ADRs.
+description: Obsidian Workspace PM — tasks and documents. Supports kebab-case names, relations, ticket publishing, and frontier queries. ADRs belong to the adr plugin; use the `adr` skill for them.
 ---
 
 # pm — Obsidian Project Management
@@ -23,18 +23,17 @@ Folders are created on demand by `create`/`move`. If a project dashboard is miss
 
 ## Names and templates
 
-All new note filenames are kebab-case: lowercase, whitespace and punctuation become `-`, repeated separators collapse, and Unicode is retained. Human-readable titles go in `title` frontmatter. Examples: `Implement Auth` → `implement-auth.md`; ADR `Switch to SQLite` → `adr-0007-switch-to-sqlite.md`.
+All new note filenames are kebab-case: lowercase, whitespace and punctuation become `-`, repeated separators collapse, and Unicode is retained. Human-readable titles go in `title` frontmatter. Example: `Implement Auth` → `implement-auth.md`.
 
-Fixed templates are `task`, `doc`, and `adr`, installed by `/obw-init`; if one is absent, stop and ask the user to re-run init rather than inline a template.
+Fixed templates are `task` and `doc`, installed by `/obw-init`; if one is absent, stop and ask the user to re-run init rather than inline a template.
 
 ## Operations
 
 - **Create task**: `obsidian vault={vault} create` `pm/{project}/tasks/{kebab}.md` with `template=task`; set `title`, `project`, and requested `priority`, `due`, `tags`.
 - **Create doc**: `obsidian vault={vault} create` `pm/{project}/docs/{kebab}.md` with `template=doc`; set `title` and `project`.
-- **Create ADR**: apply the Decision Warrant first, then `obsidian vault={vault} search` existing ADRs for the next number, zero-padded to four digits; create `pm/{project}/docs/adr-{NNNN}-{kebab}.md` with `template=adr`, then set `title`, `project`, and `status`.
 - **List**: `obsidian vault={vault} search` with `query="[type:task] [project:{project}] [status:<s>]" format=json`.
 - **Archive**: confirm first; inspect dependents, set `status=done` and `completed`, then `obsidian vault={vault} move` to `pm/{project}/tasks/archive`.
-- **Delete/replace/supersede**: confirm first. If delete is unavailable, move to archive; never silently replace an existing note.
+- **Delete/replace**: confirm first. If delete is unavailable, move to archive; never silently replace an existing note.
 
 A known-name read is one direct CLI call; never search first. A create error stops publishing: report landed and unlanded filenames and never retry the create. Report success only with the CLI receipt.
 
@@ -65,20 +64,10 @@ obsidian vault={vault} search query="[type:task] [project:{project}] -[status:do
 
 `blocked_by` values are wikilinks; an empty list is not excluded by mere property presence.
 
-## ADR Decision Warrant
-
-An ADR is created only when **all three** conditions hold:
-
-1. **Hard to reverse** — changing the decision later has real cost (migration, data loss, or external commitment).
-2. **Confusing without context** — a future reader would reasonably ask why it was done this way.
-3. **Real trade-off** — at least two genuine options were considered and weighed; “do nothing” alone does not count.
-Apply the warrant before creating or superseding an ADR. If condition 1 or 2 fails, decline and redirect to a plain doc. If condition 3 fails, decline and redirect to a spec (an invariant/constraint), unless the user explicitly reaffirms after seeing the failed condition. The first format/bootstrap ADR is exempt. Existing ADR audits may flag failures but never edit them automatically.
-
 ## Schema
 
 Task: `title`, `type: task`, `status` (todo/in-progress/blocked/done), `priority` (high/medium/low), `project`, `due`, `tags`, `parent`, `blocked_by`, `related`, `created`, `completed`.
 Doc: `title`, `type: doc`, `project`, `created`, `updated`.
-ADR: `title`, `type: adr`, `project`, `status` (proposed/accepted/deprecated/superseded), `created`, `deciders`.
 
 ## Dashboards
 

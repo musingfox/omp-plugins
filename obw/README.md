@@ -29,20 +29,20 @@ The Pi manifest exposes only the extension. It does not load these OMP skills or
 |-------|---------|
 | `/obw-init` | Pick a vault, write `.obsidian.yaml`, install templates, bootstrap a project skeleton, and migrate pre-0.9 layouts |
 | `/obw-jot <text>` | Quick capture (timestamped bullet to today's daily note) or long-form note |
-| `/obw-pm [intent]` | Task / document / ADR lifecycle, relations, warranted ADRs, and previewed ticket publishing |
+| `/obw-pm [intent]` | Task / document lifecycle, relations, and previewed ticket publishing; ADRs belong to the `adr` skill |
 
 ## OMP skill conventions
 
 - **Vault I/O** goes through the `obsidian` CLI in the main context (no `task` spawn). This plugin does not duplicate CLI syntax; it defers to the `obsidian` skill.
 - **Daily notes** use Obsidian's **Daily Notes** core plugin (folder / filename / template). Quick capture calls `daily:append`.
-- **Templates** (`task`, `doc`, `adr`) live in your vault's Obsidian Templates folder. On `/obw-init` the plugin copies starter files from `templates/` only if the same name doesn't already exist — it never overwrites your edits.
+- **Templates** (`task`, `doc`) live in your vault's Obsidian Templates folder. On `/obw-init` the plugin copies starter files from `templates/` only if the same name doesn't already exist — it never overwrites your edits.
 - **Dashboards** (optional) are **Obsidian Bases** (`.base` files — core in Obsidian 1.9+) generated from plugin-internal templates via shell substitution, so contents never enter the session context.
 
 ## Prerequisites
 
 - [Obsidian](https://obsidian.md) app running, with a working `obsidian` executable on PATH. See the [Obsidian CLI documentation](https://help.obsidian.md/cli). This is not the unrelated standalone `obsidian-cli` binary by Yakitrak.
 - For OMP skills, kepano's [obsidian-skills](https://github.com/kepano/obsidian-skills) linked as an OMP package (`package.json` with `"omp": {}` + `omp plugin link --local`).
-- **Templates** core plugin enabled (required for `/obw-pm` — `task` / `doc` / `adr` templates)
+- **Templates** core plugin enabled (required for `/obw-pm` — `task` / `doc` templates)
 - **Daily Notes** core plugin enabled (required for `/obw-jot` quick capture)
 - **Bases** core plugin enabled (required only for `/obw-pm` dashboards — bundled in Obsidian 1.9+)
 
@@ -92,7 +92,7 @@ pm/
     ├── dashboard.base    # Project dashboard
     ├── tasks/            # Active tasks
     │   └── archive/      # Completed tasks
-    ├── docs/             # Docs + ADRs
+    ├── docs/             # Docs
     └── runs/             # Pi multiline reply snapshots, created on demand
 ```
 
@@ -104,9 +104,8 @@ Dashboards and searches depend on these frontmatter fields. If you edit the inst
 
 - **Task** — `title`, `type: task`, `status` (`todo` / `in-progress` / `blocked` / `done`), `priority` (`high` / `medium` / `low`), `project`, `due` (date), `tags` (list), `parent` (link), `blocked_by` (list of links), `related` (list of links), `created`, `completed`
 - **Doc** — `title`, `type: doc`, `project`, `created`, `updated`
-- **ADR** — `title`, `type: adr`, `project`, `status` (`proposed` / `accepted` / `deprecated` / `superseded`), `created`, `deciders`
 
-New notes use kebab-case filenames while `title` retains the human-readable name. ADR creation requires all three warrant conditions: hard to reverse, confusing without context, and a real trade-off; failures redirect to a doc or spec.
+New notes use kebab-case filenames while `title` retains the human-readable name. ADRs are not pm notes: use the `adr` skill, which writes them to the repository. The project dashboard's Docs view still lists `type: adr` notes already in a vault.
 
 ## Checks
 
@@ -128,7 +127,6 @@ Pi/core source checks are strict; the tools check uses checkJs. These commands c
 /obw-jot #worklog 完成 API 重構 PR，等 review
 /obw-jot API Redesign Proposal --folder Architecture --tag design
 /obw-pm add task implement-auth, high priority, due 2026-05-01
-/obw-pm create adr about switching to SQLite
 /obw-pm implement-auth is done, archive it
 /obw-pm refresh dashboard
 ```

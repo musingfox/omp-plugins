@@ -10,7 +10,6 @@ Templates are deliberately **not** auto-loaded into session context. They are pl
 |----------|---------|---------------|--------------|
 | `task.md` | `/obw-pm` task | `{{title}}`, `{{date}}` | `property:set` for project/priority/due/tags |
 | `doc.md` | `/obw-pm` document | `{{title}}`, `{{date}}` | `property:set` for project |
-| `adr.md` | `/obw-pm` ADR | `{{title}}`, `{{date}}` | `property:set` for project/status |
 | `dashboard-cross.base` | Cross-project Bases dashboard | — | none |
 | `dashboard-project.base` | Per-project Bases dashboard | `__PROJECT__` | `sed` replace `__PROJECT__` before create |
 
@@ -24,7 +23,6 @@ If you rewrite these templates, keep these fields — `/obw-pm` search and Bases
 
 - Tasks: `type: task`, `status`, `priority`, `project`, `tags`, `due`, `created`, `completed`
 - Docs: `type: doc`, `project`, `created`, `updated`
-- ADRs: `type: adr`, `project`, `status`, `created`
 
 ## Regenerating
 

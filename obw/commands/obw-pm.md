@@ -1,5 +1,5 @@
 ---
-description: "Task / document / ADR lifecycle, relations, and ticket publishing"
+description: "Task / document lifecycle, relations, and ticket publishing"
 argument-hint: "[intent]"
 ---
 

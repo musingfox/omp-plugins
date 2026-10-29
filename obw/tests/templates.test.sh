@@ -4,7 +4,8 @@ root=$(cd "$(dirname "$0")/.." && pwd)
 fail(){ echo "FAIL: $*" >&2; exit 1; }
 
 grep -q '^created: {{date}}$' "$root/templates/task.md" || fail 'task created property'
-grep -q '^project: $' "$root/templates/adr.md" || fail 'adr project property'
+[ ! -e "$root/templates/adr.md" ] || fail 'ADRs belong to the adr plugin, not an obw template'
+grep -q 'use the `adr` skill' "$root/skills/obw-pm/SKILL.md" || fail 'pm must point ADR requests at the adr skill'
 grep -q "display: 'if(title, title, file.name)'" "$root/templates/dashboard-project.base" || fail 'project display formula'
 grep -q 'name: "Blocked"' "$root/templates/dashboard-project.base" || fail 'blocked view'
 grep -q 'name: "By Parent"' "$root/templates/dashboard-project.base" || fail 'parent view'
