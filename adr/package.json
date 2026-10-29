@@ -3,5 +3,7 @@
   "private": true,
   "version": "0.1.0",
   "description": "Architecture Decision Record lifecycle management for OMP projects",
-  "omp": {}
+  "omp": {
+    "upstream": "b4555826"
+  }
 }

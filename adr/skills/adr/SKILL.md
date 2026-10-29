@@ -47,7 +47,7 @@ decision-makers: ""
 ---
 ```
 
-Statuses are `proposed`, `accepted`, `deprecated`, or `superseded by
+Statuses are `proposed`, `rejected`, `accepted`, `deprecated`, or `superseded by
 [ADR-NNNN](file)`. Read `references/bootstrap-adr.md` for the first-use file.
 
 ## Decision warrant
@@ -75,7 +75,7 @@ is exempt because it records the format. Do not restate this test in every opera
 
 Glob all numbered ADR files. Read each frontmatter and first level-one heading and
 present a table with number, title, status, and date. Show supersession chains such
-as `0001 -> 0003`, then summarize counts by accepted, proposed, superseded, and
+as `0001 -> 0003`, then summarize counts by accepted, proposed, rejected, superseded, and
 deprecated. Do not include obw project-note ADRs.
 
 ## Supersede
@@ -100,7 +100,12 @@ Execute all steps in order:
    OMP ask per category to choose auto-update, add a superseded notice, or skip.
    Auto-update ADR links/status and documentation links; add notices as
    `(superseded — see [ADR-NNNN](path))`; skip config by default unless selected.
-7. Report created and superseded records plus counts and skipped paths needing review.
+   `path` is relative to the file that holds the notice, and every markdown link
+   written or updated in this step follows the same rule.
+7. Verify: run the Audit broken-link and stale-reference checks on every file step 6
+   changed. Fix each finding and re-run until both are clean. A reference the user
+   chose to skip stays stale; list it in the report.
+8. Report created and superseded records plus counts and skipped paths needing review.
 
 ## Deprecate
 
@@ -110,7 +115,13 @@ status to `deprecated`, then insert before its first heading:
 `> **DEPRECATED**: This ADR is deprecated. The decision described here is no longer relevant.`
 
 Run the same four-layer scan and category presentation as Supersede, but default to
-adding `(deprecated)` notices. Use OMP ask per category to add notices or skip.
+adding `(deprecated)` notices. Use OMP ask per category to add notices or skip. A notice path is relative to the file
+that holds it.
+
+Verify: run the Audit broken-link and stale-reference checks on every file the
+notices changed. Fix each finding and re-run until both are clean; skipped references
+are listed in the report.
+
 Report the deprecated record and all updates/skips.
 
 ## Audit

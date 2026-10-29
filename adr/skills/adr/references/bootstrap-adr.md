@@ -43,7 +43,7 @@ Chosen option: "MADR 4.0", because it provides YAML frontmatter for machine-pars
 
 ### Confirmation
 
-All new ADRs follow the MADR 4.0 template. Status field uses: proposed | accepted | deprecated | superseded by [ADR-NNNN](file).
+All new ADRs follow the MADR 4.0 template. Status field uses: proposed | rejected | accepted | deprecated | superseded by [ADR-NNNN](file).
 
 ## Pros and Cons of the Options
 
@@ -58,7 +58,7 @@ Structured markdown with YAML frontmatter, standardized sections, active communi
 
 ### adr-tools format (Nygard style)
 
-Plain markdown with status in heading, simpler and shorter.
+Plain markdown with status in heading, simpler structure.
 
 * Good, because simpler and shorter
 * Bad, because no YAML frontmatter — status parsing requires regex
@@ -66,7 +66,7 @@ Plain markdown with status in heading, simpler and shorter.
 
 ### Custom format
 
-Team-defined format tailored to team preferences.
+Team-defined format tailored to specific needs.
 
 * Good, because fits team preferences exactly
 * Bad, because no community support or tooling
@@ -78,6 +78,7 @@ Ad-hoc documentation of decisions.
 
 * Good, because zero overhead
 * Bad, because inconsistent documentation
+* Bad, because no lifecycle tracking
 * Bad, because decisions get lost or forgotten
 
 ## More Information
