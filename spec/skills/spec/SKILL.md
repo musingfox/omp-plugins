@@ -3,8 +3,8 @@ name: spec
 description: >-
   Architecture spec library — propose, accept, supersede, verify, and slice
   the invariants and forward-looking interface contracts a project must not
-  break. Use when writing down a rule that must survive across runs, when a
-  worker needs to know what constrains the files it is about to touch, or when
+  break. Use when writing down a rule that must survive across runs, when an
+  agent needs to know what constrains the files it is about to touch, or when
   auditing whether the specs still hold. For domain terms, use glossary. For
   "why we chose A over B", use adr.
 ---
@@ -22,6 +22,16 @@ Do NOT use for: describing what the system currently looks like. That is the
 code's job, and a spec that restates it becomes a drift source the first time
 someone edits without updating the entry.
 
+## Propose an entry
+
+1. Pass the silence test (What earns an entry).
+2. Pick a kebab-case id and write the frontmatter (Entry format).
+3. Write the four-paragraph body (Entry format).
+4. Add the `check:` if one is honest. Run it green on the current code, then red
+   on a scratch violation (verify).
+5. Add the back-link in `related` on every entry this one names (Entry format).
+6. Set `status: proposed` (Lifecycle).
+
 ## Directory
 
 Scan `docs/spec/`. If it does not exist and the user wants an entry, ask where
@@ -29,11 +39,10 @@ it should live. Override with `SPEC_DIR`.
 
 ## What earns an entry
 
-A rule belongs here only if **its violation is silent**. The entries already in
-this repo all close by naming that silence: a vendored copy drifts while both
-copies still run; `rc=0` proves the process did not crash, not that the work is
-done; `Edit` turns a FAIL into a PASS and the deliverable still looks like the
-deliverable.
+A rule belongs here only if **its violation is silent**. Typical silences: a
+vendored copy drifts while both copies still run; `rc=0` proves the process did
+not crash, not that the work is done; a reviewer that can edit turns a FAIL into
+a PASS and the deliverable still looks like the deliverable.
 
 Anything that fails loudly needs no entry — the compiler catches it, or a test
 goes red. If you cannot write the sentence explaining why nobody would notice
@@ -46,7 +55,7 @@ heading of every slice, so make it readable:
 
 ```yaml
 ---
-id: judge-seats-cannot-edit
+id: reviewer-cannot-edit
 status: accepted            # proposed | accepted | superseded
 scope:                      # file globs, never module names
   - "agents/reviewer.md"
@@ -57,21 +66,21 @@ adr: null                   # link when superseded
 ---
 ```
 
-**`source` is the birth record.** An entry has two birthplaces: a milestone
-settles and names an interface later flows must honour, or a flow finishes and
-main finds an invariant the run revealed. Either way, write down which — a rule
+**`source` is the birth record.** An entry has two birthplaces: a planning milestone
+settles and names an interface later flows must honour, or a run finishes and
+the orchestrating session finds an invariant it revealed. Either way, write down which — a rule
 whose origin nobody remembers is a rule nobody dares delete, and that is how a
 spec library silts up into a layer of untouchable sediment.
 
 `null` is honest for entries that predate a milestone. Do not invent a source to
 fill the field.
 
-The body is the text that gets pasted into a brief verbatim. Write it that way:
+The body is the text that gets pasted into an agent's task brief verbatim. Write it that way:
 no "see file X", no summary-plus-detail split, nothing that needs a second pass
-before a worker can act on it.
+before an agent can act on it.
 
 Write it as continuous prose — no headings. The structure lives in the paragraph
-order, so a slice arrives as something a worker can act on rather than a nested
+order, so a slice arrives as something an agent can act on rather than a nested
 document:
 
 1. **the rule** — one imperative sentence
@@ -79,8 +88,8 @@ document:
 3. **the boundary** — what is out of scope, and the legitimate exceptions
 4. **the failure** — what a violation does, and why nobody sees it
 
-Existing entries run 8–20 lines. That is a budget, not a style: one brief can
-match several entries, and every line is attention spent by the worker. Longer
+Keep an entry to roughly 10–20 lines. That is a budget, not a style: one brief can
+match several entries, and every line is attention spent by the agent. Longer
 usually means two rules share a file (split them), or the reasoning for the
 choice leaked in — that belongs in an ADR, since a spec carries only what must
 not change.
@@ -89,33 +98,45 @@ not change.
 their own drift source. The same globs drive both `slice` and any future hook.
 
 **`related` stays in the frontmatter, never in the body.** Links are a map for
-whoever decides where to look next — they are not execution context, and a
-worker who reads `[[other-spec]]` in an injected body cannot fetch it. `slice`
+whoever decides where to look next — they are not execution context, and an
+agent who reads `[[other-spec]]` in an injected body cannot fetch it. `slice`
 prints bodies only, so the map stays where it is useful and out of the brief.
 Add the back-link on the other entry too; a one-way link is one you will not
 find from the side you are standing on.
 
 ## verify — push each entry to the strongest form available
 
-`test:` > `check:` > prose, in that order. Only `check:` is executable today.
+Prefer `check:` over prose. `test:` is not executable yet and is reported as debt
+like prose, so it does not outrank `check:`. A `check:` runs from the repo root;
+write it, and test it, from there.
 
 Downgrade to `verify: null` when a check would produce false positives — an
 untrustworthy check is worse than none, because the whole drift defence dies
 with it.
 
 A prose entry is not a weaker spec. It is **a spec not yet bound to its source
-of truth**, and `verify` is that binding: an entry with no check asserts
+of truth**, and `verify` is that binding: a rule that reviewers cannot edit is
+true because of the `tools:` line in the reviewer agent file, and its check is
+what ties the readable assertion to the executable one. An entry with no check asserts
 something nothing holds it to.
 
 So an unbound entry carries its own binding plan — a closing paragraph saying
-why a check would be wrong today and what would make one possible. That makes
-the debt `verify` reports every run actionable instead of a standing complaint.
+why a check would be wrong today and what would make one possible.
+For example, a rule that verdicts come from a file stays prose when
+legitimate stream reads make any repo-wide grep a false-positive generator,
+until a narrower assertion exists. That paragraph is what makes the debt `verify` reports every
+run actionable instead of a standing complaint.
 
 Forward-looking interface contracts are born prose: the interface does not
 exist yet, so nothing can test it. Once it lands, fill the `verify` in.
 
 Before adding a check: run it against the current code. **A check that is red
-on day one is a wrong check, not wrong code.**
+on day one is a wrong check, not wrong code.** Then break the rule once in a
+scratch edit and run it again: it must go red. A check that stays green against
+a real violation guards nothing. Make the scratch edit with the `edit` tool and
+undo it with the reverse `edit` (or work on a copy or a worktree). Never run
+`git checkout` or `git restore` on the file: the working tree often holds the
+user's uncommitted changes.
 
 The Markdown entry is the source of truth for the invariant and its `verify:` binding. A
 check must exercise an observable repository contract; do not replace it with a grep for
@@ -130,7 +151,8 @@ remain authoritative.
 
 ## Lifecycle
 
-Anyone proposes (`status: proposed`), main accepts. Accepting is editing one
+Anyone proposes (`status: proposed`); the user or the orchestrating session
+accepts. Accepting is editing one
 field — no approval machinery. Proposed entries are invisible to `slice`, so
 unapproved rules cannot leak into execution.
 
@@ -151,5 +173,5 @@ run but never blocks.
 
 `slice` prints the bodies of accepted entries whose scope matches any of the
 given paths, each under a `## spec: <id>` heading — this is how a spec reaches
-a worker. Feed it the files a task will touch, paste the output into the brief.
+an agent. Feed it the files a task will touch, paste the output into the brief.
 Empty output means nothing constrains those paths.
