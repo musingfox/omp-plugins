@@ -21,6 +21,18 @@ Pi restores binding from the active session branch. The card's `session` propert
 
 Print/JSON reports use stderr; RPC/TUI reports use notifications. `/issue` reports its mode restriction rather than opening a custom UI outside TUI.
 
+## Pm tools (OMP)
+
+The OMP extension registers three tools the model can call to change a task card:
+
+- `pm_tick {card, index, checked}` sets the `index`-th checkbox (from 1) under `## Acceptance Criteria`.
+- `pm_note {card, line}` appends `- line` at the end of `## Notes`, creating the section when it is missing.
+- `pm_status {card, status}` sets the frontmatter `status` to `todo`, `in-progress`, `blocked` or `done`. It does not bind the session.
+
+`card` is the file name without `.md`: `a` is `pm/<project>/tasks/a.md`, with the vault and project from the nearest `.obsidian.yaml`. A name that is empty, `.` or `..`, or holds `/`, `\` or a control character is refused before any CLI call. Each call reads the card with `obsidian vault=<vault> eval`, writes it only if it is unchanged since that read, and reads it back; calls run one after another. The result is one JSON line of text: `{"ok":true,"path":"pm/<project>/tasks/a.md"}`, or `{"ok":false,"reason":"..."}` with `isError` set. The logic lives in `pm.ts`; `index.ts` only registers it.
+
+Pi does not get these tools yet. Pi's `registerTool` takes a TypeBox schema, so a pi adapter would need a `typebox` dependency rather than reuse the JSON Schema in `pm.ts`.
+
 ## OMP skills
 
 The Pi manifest exposes only the extension. It does not load these OMP skills or markdown commands.

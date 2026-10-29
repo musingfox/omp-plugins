@@ -79,6 +79,6 @@ export function coreTypecheckConfig() {
 			strict: true, noEmit: true, types: ["bun"],
 			allowImportingTsExtensions: true,
 		},
-		include: ["../contracts.test.ts", ...["workspace", "session", "issue", "writeback"].flatMap((name) => [`../${name}.ts`, `../${name}.test.ts`])],
+		include: ["../contracts.test.ts", ...["workspace", "session", "issue", "writeback", "pm"].flatMap((name) => [`../${name}.ts`, `../${name}.test.ts`])],
 	};
 }

@@ -35,7 +35,7 @@ function assertOwner(body: string, binding: Binding): void {
 
 // Obsidian API calls and UTF-8/base64 transport follow the verified CC source:
 // cc-plugins@c9871a1/obsidian-workspace/hooks/writeback.sh:60-110.
-function evalCode(payload: unknown, operation: string): string {
+export function evalCode(payload: unknown, operation: string): string {
 	const encoded = Buffer.from(JSON.stringify(payload), "utf8").toString("base64");
 	return `(async () => {
  const p = JSON.parse(new TextDecoder().decode(Uint8Array.from(atob('${encoded}'), c => c.charCodeAt(0))));
@@ -43,7 +43,7 @@ function evalCode(payload: unknown, operation: string): string {
  return 'OBW_WRITEBACK:' + JSON.stringify(result);
 })()`;
 }
-function evalResult(output: string): Record<string, unknown> {
+export function evalResult(output: string): Record<string, unknown> {
 	const match = output.trim().match(/^(?:=>\s*)?OBW_WRITEBACK:(\{.*\})$/s);
 	const result = match ? asRecord(JSON.parse(match[1])) : undefined;
 	if (!result) throw new Error("Obsidian writeback returned invalid readback");

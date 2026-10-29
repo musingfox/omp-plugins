@@ -64,7 +64,7 @@ test("Bun core check covers contracts and named host-free units without either a
 	expect(config.include).toEqual([
 		"../contracts.test.ts", "../workspace.ts", "../workspace.test.ts",
 		"../session.ts", "../session.test.ts", "../issue.ts", "../issue.test.ts",
-		"../writeback.ts", "../writeback.test.ts",
+		"../writeback.ts", "../writeback.test.ts", "../pm.ts", "../pm.test.ts",
 	]);
 	expect(config.compilerOptions).not.toHaveProperty("paths");
 	expect(config.compilerOptions).not.toHaveProperty("skipLibCheck");

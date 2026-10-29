@@ -1,6 +1,7 @@
 import type { ExtensionAPI } from "@oh-my-pi/pi-coding-agent";
 import { parseKey, truncateToWidth } from "@oh-my-pi/pi-tui";
 import { createIssueBrowser, runIssueCommand, sanitizeText } from "./issue";
+import { createPmTools, PM_TOOLS, pmToolResult } from "./pm";
 
 export {
 	applyIssueCards, createIssueComponent, initialIssueState, isSafeCardPath,
@@ -11,6 +12,13 @@ export type { IssueCard, IssueComponent, IssueMode, IssueState, IssueView, Issue
 
 export default function extension(omp: ExtensionAPI): void {
 	const exec = omp.exec.bind(omp);
+	const pm = createPmTools(exec);
+	for (const tool of PM_TOOLS) {
+		omp.registerTool({
+			...tool, approval: "write", loadMode: "essential",
+			execute: async (_toolCallId, params, _signal, _onUpdate, ctx) => pmToolResult(await pm.run(tool.name, params, ctx.cwd)),
+		});
+	}
 	omp.registerCommand("issue", {
 		description: "Browse Obsidian Workspace task views and cards",
 		handler: async (argument, ctx) => {

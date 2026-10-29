@@ -37,7 +37,7 @@ Reload in-session: `/reload-plugins`.
 | Name | Slash commands | Description |
 |------|----------------|-------------|
 | **viz** | `/viz-inline`, `/viz-render` | chat shapes and browser HTML |
-| **obw** | `/issue`; Pi: `/obw-bind`, `/obw-unbind`, `/obw-sync`; OMP skills: `/obw-init`, `/obw-jot`, `/obw-pm` | Obsidian tasks; Pi-first writeback, OMP browsing/skills |
+| **obw** | `/issue`; Pi: `/obw-bind`, `/obw-unbind`, `/obw-sync`; OMP tools: `pm_tick`, `pm_note`, `pm_status`; OMP skills: `/obw-init`, `/obw-jot`, `/obw-pm` | Obsidian tasks; Pi-first writeback, OMP browsing/skills |
 | **spec** | — | Architecture contracts and domain glossary |
 | **diagnose** | `/diagnose-now` | Evidence-only bug diagnosis and main-session handoff |
 | **deepen** | — | Architecture survey from user scope or git hotspots |
