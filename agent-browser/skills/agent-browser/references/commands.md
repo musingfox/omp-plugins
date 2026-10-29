@@ -188,16 +188,16 @@ agent-browser press Alt+Enter          # Alt+Enter
 ### `scroll`
 
 ```bash
-agent-browser scroll <direction> <amount>
+agent-browser scroll <direction> [px]
 ```
 
-Scroll the page. Direction: `up`, `down`, `left`, `right`. Amount: number of viewport heights/widths.
+Scroll the page. Direction: `up`, `down`, `left`, `right`. Amount: pixels.
 
 **Examples:**
 ```bash
-agent-browser scroll down 3            # Scroll down 3 viewport heights
-agent-browser scroll up 1              # Scroll up 1 viewport height
-agent-browser scroll down 0.5          # Scroll down half a viewport
+agent-browser scroll down 500          # Scroll down 500 pixels
+agent-browser scroll up 500            # Scroll up 500 pixels
+agent-browser scrollintoview @e3       # Scroll an element into view
 ```
 
 ## Screenshots
@@ -225,15 +225,13 @@ agent-browser screenshot --annotate     # Screenshot with ref labels overlay
 agent-browser set headers '<json>'
 ```
 
-Set custom HTTP headers for subsequent requests. Headers persist for the session.
+Set HTTP headers for every request to every domain for the rest of the session. Never put credentials here: tokens and cookies would reach every third-party origin the page requests.
 
-**Examples:**
 ```bash
-agent-browser set headers '{"Authorization": "Bearer eyJ..."}'
-agent-browser set headers '{"Cookie": "session=abc123", "X-Custom": "value"}'
+agent-browser set headers '{"X-Custom": "value"}'
 ```
 
-**Per-command headers:**
+**Credentials** go through `open --headers`, which scopes them to that URL's origin:
 ```bash
 agent-browser open https://api.example.com --headers '{"Authorization": "Bearer token"}'
 ```
