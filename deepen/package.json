@@ -2,5 +2,5 @@
   "name": "deepen",
   "private": true,
   "version": "0.1.1",
-  "omp": {}
+  "omp": { "upstream": "b4555826" }
 }

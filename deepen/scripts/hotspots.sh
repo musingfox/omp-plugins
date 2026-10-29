@@ -2,6 +2,7 @@
 # Rank recent non-merge commits by depth-2 directory.
 set -euo pipefail
 
+# 200 commits: the earlier window of 10 returned wide for repos with real churn (8ba6f0a).
 n=200
 while getopts 'n:' opt; do
   case "$opt" in
@@ -38,6 +39,7 @@ top=0
 if [ -n "$ranked" ]; then top=$(printf '%s\n' "$ranked" | awk 'NR==1 { print $1 }'); fi
 share=0
 if [ "$window" -gt 0 ]; then share=$((100 * top / window)); fi
+# Hotspot needs a window of at least 10 commits and a top directory in at least 25% of them (the earlier 50% bar returned wide too often, 8ba6f0a).
 if [ "$window" -ge 10 ] && [ "$share" -ge 25 ]; then scope=hotspot; else scope=wide; fi
 printf 'window: %s\n' "$window"
 printf 'top-share: %s\n' "$share"

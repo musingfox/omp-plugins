@@ -26,7 +26,7 @@ Read its `scope:` line. For `scope: hotspot`, use the ranked paths (top three). 
 
 ## 2. Context
 
-Before dispatch, read `CONTEXT.md` if present and ADRs under `docs/adr/`. They constrain candidates.
+Before dispatch, read `CONTEXT.md` if it exists and any ADRs under `docs/decisions/` or `docs/adr/`, the directories the adr plugin looks in first. They constrain what a candidate may contradict.
 
 ## 3. Explore
 
