@@ -33,7 +33,7 @@ Fixed templates are `task` and `doc`, installed by `/obw-init`; if one is absent
 - **Create doc**: `obsidian vault={vault} create` `pm/{project}/docs/{kebab}.md` with `template=doc`; set `title` and `project`.
 - **List**: `obsidian vault={vault} search` with `query="[type:task] [project:{project}] [status:<s>]" format=json`.
 - **Archive**: confirm first; inspect dependents, set `status=done` and `completed`, then `obsidian vault={vault} move` to `pm/{project}/tasks/archive`.
-- **Delete/replace**: confirm first. If delete is unavailable, move to archive; never silently replace an existing note.
+- **Delete**: confirm first, then `obsidian vault={vault} delete`; it moves the note to the trash. Never silently replace an existing note.
 
 A known-name read is one direct CLI call; never search first. A create error stops publishing: report landed and unlanded filenames and never retry the create. Report success only with the CLI receipt.
 
