@@ -1,9 +1,11 @@
 ---
 name: obw-pm
-description: Obsidian Workspace PM — tasks and documents. Supports kebab-case names, relations, ticket publishing, and frontier queries. ADRs belong to the adr plugin; use the `adr` skill for them.
+description: Obsidian Workspace PM — tasks and documents in your Obsidian vault. Triggers on task/doc lifecycle requests ("add a task", "create a doc", "archive X", "list in-progress tasks", "refresh dashboard", "split this spec into tickets") and via `/obw-pm`. Requires `.obsidian.yaml` with a `pm.project` section. ADRs belong to the adr plugin.
 ---
 
 # pm — Obsidian Project Management
+
+For ADRs, use the `adr` skill.
 
 Run the `obsidian` CLI directly in the main context (never spawn a task). Before any CLI call, read the official Obsidian CLI skill for exact syntax; never run `obsidian help`/`--help`.
 

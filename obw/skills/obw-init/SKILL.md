@@ -1,6 +1,6 @@
 ---
 name: obw-init
-description: Interactively create `.obsidian.yaml`, install templates, bootstrap a project skeleton, and migrate pre-0.9 Obsidian Workspace layouts.
+description: Interactively create `.obsidian.yaml`, install starter templates (task / doc), bootstrap the project's vault workspace, and migrate a pre-0.9 layout. Triggers via `/obw-init`, on "migrate my obw vault" or "upgrade my obw vault", or when another obw skill reports missing config.
 ---
 
 # init — Initialize Obsidian Workspace
