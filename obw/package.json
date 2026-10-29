@@ -17,7 +17,8 @@
     "check": "bun tools/run.mjs check"
   },
   "omp": {
-    "extensions": ["./index.ts"]
+    "extensions": ["./index.ts"],
+    "upstream": "b4555826"
   },
   "pi": {
     "extensions": ["./pi.ts"],
