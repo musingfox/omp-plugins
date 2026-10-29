@@ -9,6 +9,9 @@ function fixture(run) {
 	/** @type {NodeJS.ProcessEnv} */
 	const env = { ...process.env, GIT_CONFIG_GLOBAL: join(root, "global.config"), GIT_CONFIG_NOSYSTEM: "1" };
 	delete env.OBW_COMMIT_MSG_ACTIVE;
+	// A hook running in a linked worktree inherits GIT_DIR and friends, which
+	// would point the fixture's `git init` at the outer repository.
+	for (const key of Object.keys(env)) if (key.startsWith("GIT_") && key !== "GIT_CONFIG_GLOBAL" && key !== "GIT_CONFIG_NOSYSTEM") delete env[key];
 	const command = (args) => Bun.spawnSync(args, { cwd: root, env, stdout: "pipe", stderr: "pipe" });
 	const executable = (path, text) => { writeFileSync(path, text); chmodSync(path, 0o755); };
 	try {
