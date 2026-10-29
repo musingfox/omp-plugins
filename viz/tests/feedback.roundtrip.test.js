@@ -141,11 +141,13 @@ describe('feedback round mode', () => {
         expect(out.match(/^choice:/gm)).toBe(null);
     });
 
-    test('toggle: multi accumulates, single replaces', () => {
+    // A re-click on a single pick keeps it: a double-click, or a second click to look
+    // again, used to clear the answer while the page still read as answered.
+    test('toggle: multi accumulates, single replaces and a re-click keeps it', () => {
         expect(M.toggle(['a'], 'b', true)).toEqual(['a', 'b']);
         expect(M.toggle(['a', 'b'], 'a', true)).toEqual(['b']);
         expect(M.toggle(['a'], 'b', false)).toEqual(['b']);
-        expect(M.toggle(['a'], 'a', false)).toEqual([]);
+        expect(M.toggle(['a'], 'a', false)).toEqual(['a']);
     });
 
     // '#' is an ordinary character in a value, so a template written with trailing
@@ -167,5 +169,21 @@ describe('feedback round mode', () => {
         expect(q.title).toBe('which #tag wins?');
         expect(q.multi).toBe(false);
         expect(q.choice).toEqual(['# leave empty']);
+    });
+});
+
+// The recipe doc's template is what agents copy; parse it as written.
+describe('feedback recipe template parses clean', () => {
+    const doc = readFileSync(join(import.meta.dir, '..', 'skills', 'viz-render',
+        'references', 'recipes', 'feedback.md'), 'utf-8');
+    const blocks = [...doc.matchAll(/```markdown\n(---\n[\s\S]*?\n---\n[\s\S]*?)```/g)]
+        .map(b => b[1]);
+
+    test('single-question template: answers empty, labels clean', () => {
+        const m = M.parse(blocks[0]);
+        expect(m.fm.choice).toBe('');
+        expect(m.fm.notes).toBe('');
+        for (const o of M.options(m)) expect(o).not.toContain('#');
+        for (const v of Object.values(m.fm)) expect(v).not.toMatch(/#|\(/);
     });
 });

@@ -21,14 +21,14 @@ human to edit many fields inside a structured document, that is the rare case
 ---
 viz: feedback
 title: <header title>
-panel: <feedback-panel heading>          # optional, default "你的回饋"
-badge: <small pill in the top bar>       # optional, default "回饋"
-prompt: <one-line instruction>           # optional, sensible default
-options: <A> | <B> | <C>                 # optional; present → selectable cards
-recommend: <one of the options>          # optional; tagged 建議
-notes_label: <textarea label>            # optional, default "回饋 / 理由（選填）"
-choice:                                  # leave empty — the human fills it
-notes:                                   # leave empty — the human fills it
+panel: <feedback-panel heading>
+badge: <small pill in the top bar>
+prompt: <one-line instruction>
+options: <A> | <B> | <C>
+recommend: <one of the options>
+notes_label: <textarea label>
+choice:
+notes:
 ---
 
 <any markdown body: prose, tables, mermaid — rendered read-only and verbatim>
@@ -37,14 +37,18 @@ notes:                                   # leave empty — the human fills it
 ### Rules
 
 - **Frontmatter required**, must contain `viz: feedback`.
-- **`options:`** — pipe-separated (full-width `｜` or ASCII `|`). Each becomes a
+- **No comments in frontmatter** — the parser takes everything after the colon as
+  the value, so a trailing `# …` or `(…)` becomes part of it and an empty
+  `choice:` reads as already answered.
+- **`options:`** — optional, pipe-separated (full-width `｜` or ASCII `|`). Each becomes a
   single-select card. Omit for a notes-only panel.
-- **`recommend:`** — must match an option label exactly; shown as `建議`.
+- **`recommend:`** — optional; must match an option label exactly; shown as `建議`.
 - **`choice:` / `notes:`** — author leaves empty; the human fills them in-browser.
   **Save** writes them back here. `notes` newlines are stored as the literal `\n`
   on one line; unescape when reading.
 - **`panel` / `badge` / `prompt` / `notes_label`** — optional label overrides so
-  the recipe carries no domain-specific wording; all have defaults.
+  the recipe carries no domain-specific wording. Defaults: `panel` 「你的回饋」,
+  `badge` 「回饋」, `notes_label` 「回饋 / 理由（選填）」, `prompt` a sensible line.
 - **Body** — rendered read-only and verbatim (markdown + mermaid); never rewritten.
 
 ## Bidirectional flow
