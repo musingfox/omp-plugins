@@ -3,5 +3,7 @@
   "private": true,
   "version": "0.1.3",
   "description": "Browser automation, Playwright testing, and web debugging skills",
-  "omp": {}
+  "omp": {
+    "upstream": "b4555826"
+  }
 }
