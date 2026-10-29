@@ -72,7 +72,7 @@ Combine flags freely: `agent-browser snapshot -i -c -d 3` for compact, shallow, 
 - Combinations: `press Control+a`, `press Control+c`.
 
 ### Scrolling
-- **`scroll down 500`** — Scroll down 500 pixels. The amount is in pixels.
+- **`scroll down 500`** — Scroll down 500 pixels. The amount is in pixels (default 300).
 - **`scroll up 500`** — Scroll up 500 pixels.
 - **`scrollintoview @eN`** — Scroll a specific element into view.
 - Scroll to reveal off-screen elements before interacting with them.
@@ -122,8 +122,3 @@ Never put credentials in `set headers`: it is a global setting that applies to e
 ### Command Help
 
 For the full command list, run `agent-browser --help`; for one command's flags and examples, run `agent-browser <command> --help`.
-
-### Reference Files
-
-For detailed command documentation with all flags and usage examples:
-- **`references/commands.md`** — Complete command reference with flag details and worked examples
