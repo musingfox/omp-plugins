@@ -15,7 +15,7 @@ Run directly in the main context; the flow is interactive via OMP `ask`.
 6. **Pre-0.9 migration** — Determine whether `pm/$PROJECT` existed before bootstrap and inspect independently:
    - Legacy `archive/`: ask first, list entries, move each note with the Obsidian CLI (never filesystem `mv`), then `rmdir` the old folder. Report moved/failed counts.
    - Missing `title`: ask first; for notes lacking it, set one property per note from the un-kebabbed filename (`implement-auth` → `Implement Auth`). Existing titles and non-kebab filenames remain unchanged. Report counts only.
-   - Missing template views: list project view names with `obsidian vault=<VAULT_NAME> read path="pm/<PROJECT>/dashboard.base" | grep -E 'name:|^Error'` and template names with `grep '^    name:' "${OMP_PLUGIN_ROOT}/templates/dashboard-project.base"`; compare names without quotes. An error means the dashboard is missing: recreate it and stop. If views are missing, report names, ask before regenerating with CLI `overwrite`, warning hand edits will be discarded. Apply the same independent check to `pm/dashboard.base` and `dashboard-cross.base`.
+   - Stale dashboards: do not compare them here. Tell the user to run `/obw-pm refresh dashboard`, which compares each dashboard with the template as parsed YAML and regenerates only an unedited one without asking.
    Each migration component may be skipped independently; report only performed work.
 7. **Write `.obsidian.yaml`** with the template below, omitting `pm` when skipped.
 8. **Offer** adding `.obsidian.yaml` to `.gitignore`.
@@ -38,7 +38,8 @@ Confirm with:
 .obsidian.yaml created (vault=<NAME>, project=<PROJ>).
 Templates installed to <TF>/: task.md, doc.md (only the missing ones).
 Workspace ready at pm/<PROJ>/: tasks/, docs/, dashboard.base.
-Migrated: <N> notes moved to tasks/archive/, <N> titles backfilled, dashboards regenerated. (omit if nothing migrated)
+Migrated: <N> notes moved to tasks/archive/, <N> titles backfilled. (omit if nothing migrated)
+Dashboards: run /obw-pm refresh dashboard to bring them up to the template. (omit on a new project)
 
 Next:
   /obw-jot <text> — quick capture to today's daily note, or a long-form note

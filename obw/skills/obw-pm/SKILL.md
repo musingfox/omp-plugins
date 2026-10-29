@@ -71,9 +71,35 @@ Doc: `title`, `type: doc`, `project`, `created`, `updated`.
 
 ## Dashboards
 
-Dashboards are Obsidian Bases (`.base`, core in Obsidian 1.9+). Generate only when asked, or recreate a missing project dashboard before reporting the PM operation complete. Use shell-piped `${OMP_PLUGIN_ROOT}/templates/dashboard-cross.base` and `dashboard-project.base` content with the CLI; never read template contents into the conversation.
+Dashboards are Obsidian Bases (`.base`, core in Obsidian 1.9+). Generate only when asked, or recreate a missing project dashboard before reporting the PM operation complete. Template contents are piped by the shell, never read into the conversation:
 
-- **Cross-project**: `pm/dashboard.base`, generated from `dashboard-cross.base`.
-- **Per-project**: `pm/{project}/dashboard.base`, generated from `dashboard-project.base` after replacing `__PROJECT__`.
+- **Cross-project** → `pm/dashboard.base`:
+  ```bash
+  obsidian vault={vault} create path="pm/dashboard.base" \
+    content="$(cat "${OMP_PLUGIN_ROOT}/templates/dashboard-cross.base")" overwrite
+  ```
+- **Per-project** → `pm/{project}/dashboard.base`:
+  ```bash
+  obsidian vault={vault} create path="pm/{project}/dashboard.base" \
+    content="$(sed "s/__PROJECT__/{project}/g" "${OMP_PLUGIN_ROOT}/templates/dashboard-project.base")" overwrite
+  ```
 
-For `refresh dashboard`, inspect the existing dashboard's view names with `obsidian vault={vault} read path="..." | grep -E 'name:|^Error'`; an error means the file is missing and it may be recreated without confirmation. Compare against template view names using `grep '^    name:'` only. Report missing views and ask before using CLI `overwrite`, warning that hand edits will be discarded. Apply the same rules independently to project and cross-project dashboards; do not overwrite a dashboard whose views already match. Conversation-mode status searches summarize without writing dashboards.
+A `refresh dashboard` request brings an existing project dashboard up to the template. Compare the two with the plugin's script. It parses both as YAML, because Obsidian reformats a `.base` it has opened and a text diff is noise, and it prints only the differences, so the template body stays out of context. It needs [uv](https://docs.astral.sh/uv/):
+
+```bash
+obsidian vault={vault} read path="pm/{project}/dashboard.base" \
+  | uv run --no-project --with pyyaml "${OMP_PLUGIN_ROOT}/scripts/dashboard-diff.py" project {project}
+```
+
+Act on the first line of its output:
+
+- `verdict: missing` — the CLI answered `Error: File "…" not found.`, so the dashboard is missing. Recreate it with the per-project command above and stop.
+- `verdict: current` — say the dashboard is up to date and stop.
+- `verdict: stale <version>` — the dashboard is an earlier template with no hand edits, so overwriting loses nothing. Report the `changes` lines, then regenerate with the per-project command.
+- `verdict: edited` — the dashboard matches no template version. Show its `hand edits` lines, measured against the closest version (`base`), and any `changes` lines. Warn that regenerating discards the hand edits, then regenerate only after the user agrees via OMP `ask`.
+
+In those lines, `added` is only in the dashboard, `removed` is only in the template, and `changed` reads dashboard value `->` template value. Any other output is an error; report it as one.
+
+The cross-project file follows the same steps with `path="pm/dashboard.base"`, `cross` in place of `project {project}`, and the cross-project command.
+
+Conversation-mode status searches summarize without writing dashboards. Do not rewrite an existing `.base` file unless asked (a `refresh dashboard` request is asking); the only unprompted write is recreating a project dashboard that has gone missing.

@@ -45,6 +45,7 @@ The Pi manifest exposes only the extension. It does not load these OMP skills or
 - **Templates** core plugin enabled (required for `/obw-pm` — `task` / `doc` templates)
 - **Daily Notes** core plugin enabled (required for `/obw-jot` quick capture)
 - **Bases** core plugin enabled (required only for `/obw-pm` dashboards — bundled in Obsidian 1.9+)
+- [uv](https://docs.astral.sh/uv/) (required by `/obw-pm refresh dashboard` and by `tests/dashboard-diff.test.sh` in `check`, which run `scripts/dashboard-diff.py` with pyyaml)
 
 ## Installation
 
@@ -96,7 +97,7 @@ pm/
     └── runs/             # Pi multiline reply snapshots, created on demand
 ```
 
-`/obw-init` creates this skeleton. Re-running it offers safe pre-0.9 migration: archive moves use the Obsidian CLI, missing titles are optionally backfilled, and stale dashboards are regenerated only after confirmation. Existing filenames and hand-edited templates are preserved.
+`/obw-init` creates this skeleton. Re-running it offers safe pre-0.9 migration: archive moves use the Obsidian CLI, missing titles are optionally backfilled, and stale dashboards are left to `/obw-pm refresh dashboard`. That command compares a dashboard with the template as parsed YAML (`scripts/dashboard-diff.py`), regenerates an unedited older version, and asks before discarding hand edits. Existing filenames and hand-edited templates are preserved.
 
 ## Property Schema
 
