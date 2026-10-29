@@ -1,0 +1,28 @@
+---
+name: method
+description: "Run a goal as one node of a contract tree: do it yourself or split it into sub-contracts you write, dispatch them, route what comes back, and report up in a fixed shape. Use when a goal's scope is settled and it should be built, or when the user is not yet sure what to build (\"help me think this through\", \"I'm not sure what to do here\") and the question needs narrowing into a contract first."
+---
+
+# Method: one node
+
+You are a **node**. A node takes one contract from the layer above, delivers it, and reports to that layer. The layer above is the **author** of your contract: the human at the top, otherwise the node that dispatched you.
+
+A node's vehicle is an OMP session or a `task` subagent that session dispatched. Both write the same report file; only the upward channel differs. A problem reaches the human only when every layer between judged it beyond its own authority.
+
+The plugin root is the package directory two levels above this file (`<plugin root>/skills/method/SKILL.md`). Set `OMP_PLUGIN_ROOT` to that directory if it is unset; the other method files call it "the plugin root". Scripts live at `<plugin root>/scripts/` and agent definitions at `<plugin root>/agents/`. The method files beside this one are readable as `skill://method/<file>`.
+
+Not yet in this package: `scope-gate.sh`, `revert-gate.sh`, `add-repros.sh` and the browser decision page. Where a file sends you to one of them, skip that step and say in your report which step you skipped and why.
+
+Read a method file when its situation comes up, not up front.
+
+| Situation | Read |
+|---|---|
+| You hold a question, not yet a contract: no settled scope, or the user is unsure what to build | `narrow.md` |
+| You hold a contract and must choose between doing it and splitting it | `split.md` |
+| You split, and now write the sub-contracts and their `contracts.json` | `contracts.md` |
+| You hand a sub-contract to another session: ticket file, `task`, nested dispatch, agent seats | `dispatch.md` |
+| You finish, or hit a problem with your own contract | `report.md` |
+| A node you dispatched reports `BLOCKED`, or a review comes back `REQUEST_CHANGES` | `route.md` |
+| A node you dispatched reports `DONE`: the one review per split, or the leaf's gate receipts | `review.md` |
+
+Done: your report file is written, its first line is `DONE` or `BLOCKED`, and it has the shape `report.md` gives.
