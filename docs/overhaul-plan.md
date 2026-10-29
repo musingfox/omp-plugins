@@ -78,11 +78,12 @@ Repo 的 pre-commit 會對每個 commit 跑 `bun run --cwd obw check`。新的 w
 - **M7　viz 換成 Pele 與 Flexoki。** 已完成（`a0c7786`、`3b477b2`、`5f4375c`）。
 - **M8　hook-guard 重建。** 已完成（`6ba1912`、`85b9185`）。依 cc 版補回 `pre-commit-checks.md` 與 hook 腳本。
 - **M9　obw 追上 cc。** 已完成（`2661396` 至 `ea3909f`，共 7 個 commit）。drift 報告 `drift-viz-obw-spec.md` 的 obw (a) 項目 2、6、8、9、10、11、15、20、27 不在範圍內，仍待處理。pm 工具、ADR 移除、dashboard 範本、刪除 `obw/viz.ts`。
-- **M10　obw 的 OMP 端 bind／sync。** 延續 `dual-host-plan.md` §8 未完成的部分。
+- **M10　obw 的 OMP 端 bind／sync。** 已完成（`f5b278b`、`7eb78da`、`e19b412`、`c1b9b03`），並在真實 OMP 與 Obsidian 上驗收一次（`obw/docs/dual-host-plan.md` §8）。OMP 沒有「使用者訊息已存、請求未送」的事件，使用者決定 OMP 的工作開始改在 `message_end` 記錄，可能晚於請求開始。延續 `dual-host-plan.md` §8 未完成的部分。
 - **M11　移植 audit。** 已完成（`c5dd1ab`、`c03e72d`）。
 - **M12　移植 zen-agent。** 已完成（`dca0be9`、`f30777d`、`b4b81d4`、`ba47597`）。未驗證：OMP 走 PTY 的 shell 是否也設定 `AGENT=1`。完成後讓 agent-browser 把可見瀏覽器交給它。
-- **M13　obw skill 與範本的剩餘項目。** drift 報告 obw 第 2、6、8、9、10、11、15、27 項。第 20 項（`/issue` 的篩選與排序鍵）屬可選的 UX，延後。
-- **M14　spec 同步。** 「check 要先在違規版本上變紅」規則、verdict 來自檔案的範例、glossary 觸發語。
+- **M13　obw skill 與範本的剩餘項目。** 已完成（`1aadb25` 至 `f46348a`）。第 7 項（舊版遷移檢查拆到參考檔）仍待處理。drift 報告 obw 第 2、6、8、9、10、11、15、27 項。第 20 項（`/issue` 的篩選與排序鍵）屬可選的 UX，延後。
+- **M14　spec 同步。** 已完成（`badfbd4` 至 `b48bfdc`）。「check 要先在違規版本上變紅」規則、verdict 來自檔案的範例、glossary 觸發語。
+- **M15　agent-browser 補齊上游。** 已完成（`246aee6`、`9b0ccbe`、`7e28e4c`）。移植 cc `83238191`、`2e11b620`，並補完 `f1ac52c3` 刪掉的 `references/commands.md`。與 cc `b4555826` 的 skills 只差 `allowed-tools`，因為 OMP 不以它預先核准指令（`src/discovery/agent-plugin-format.ts:94,155-157`）。
 
 執行順序是 M0、M1、M5、M2、M3、M4；其餘彼此獨立，可平行。M5 提到 M2 之前有兩個理由：cc 的交接對象是主 session，不依賴 method；OMP 依名稱去重 agent，先載入者勝（OMP 18.13.3 `src/task/discovery.ts:157-161`），spiral 的 divergence、probe、prototype 會遮住 method 的同名 agent。M4 要的 semver fixture 用 `git show dadb051:spiral/tests/render-decision.test.sh` 取回。
 

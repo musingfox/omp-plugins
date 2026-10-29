@@ -13,7 +13,7 @@ Project-scoped Obsidian tasks for pi and oh-my-pi (OMP). All vault I/O uses the 
 | `/obw-unbind` | Remove the active-branch binding without changing the vault | Same as Pi |
 | `/obw-sync` | Append the current completed reply snapshot and verify readback | Same as Pi |
 
-`/issue` requires TUI mode. Left/Backspace returns to the previous page; Escape/q exits. Card keys on both hosts are `b` to Bind and `u` to Unbind. A foreign-owner replacement requires explicit confirmation: `y` approves; `n`, Enter, or Back declines; Exit cancels the pending approval. The project comes from `.obsidian.yaml`; there is no project picker.
+`/issue` requires TUI mode. Left/Backspace returns to the previous page; Escape/q exits. Card keys on both hosts are `b` to Bind and `u` to Unbind. A foreign-owner replacement requires explicit confirmation: `y` approves; `n`, Enter, or Back declines; Exit cancels the pending approval. On OMP, `/obw-bind` asks through OMP's own Yes/No selector instead, where `y` does nothing; choose Yes and press Enter. The project comes from `.obsidian.yaml`; there is no project picker.
 
 Both hosts restore binding from the active session branch. A new session has no session file until its first reply, so it cannot bind before then. The card's `session` property records its owner; Unbind does not clear that property or historical Agent records. On Pi, during a normal model request, the `context` observer records work start after the real user message is persisted. Failures before that boundary are not covered. Neither host automatically writes results or changes task status.
 

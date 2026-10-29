@@ -180,7 +180,7 @@ Subagent 在 repo 外的新隔離目錄，用 Bun 安裝官方精確版本，使
 
 Pi-first 實作與批准範圍內的 Pi 驗收已完成。不升級或修補 OMP，不抑制 declarations diagnostics。Pre-commit 保持啟用；Pi 驗收完成時尚未 stage、commit 或 push，後續提交仍不得 bypass hook。後續 OMP writeback adapter 與 A10 仍須完成，不能以 Pi 收據宣稱完整雙宿主支援。
 
-## 8. Pi 驗收紀錄
+## 8. 驗收紀錄
 
 以下是 2026-10-13 留存 checkpoint 的觀測事實；不宣稱 vault 日後永遠維持此狀態。各層皆由獨立 reviewer 核對正式 runtime、來源 IDs、實際回覆通道及讀回內容，沒有以 exit 0 代替效果驗證。暫存 harness／收據不是本文件的依賴，必要結果記在此處。
 
@@ -202,21 +202,31 @@ Live fixture 與正常模型測試只寫批准的 task／runs；所有 vault I/O
 - 卡片留三個 Agent blocks：一筆手動 fixture 結果、一筆正常模型工作的開始、一筆正常模型結果。Runs 留兩筆全文。沒有刪除或清理測試資料。
 - Aux SID `01a135d2-76a0-73b3-bcdd-9b61b10ee8d2` 的 scratch 歷史保留曾綁定的 marker，但不是卡片最後的 owner。SDK 自然補入的 thinking metadata `a8320070` 已取得批准；拒絕／Exit 比較使用 startup 後 baseline，不把它算作模型回合或 Bind 效果。
 
+### OMP 驗收（2026-10-29）
+
+使用者批准後，在正式 OMP 18.13.3、真 Obsidian CLI 與 `@smol` 模型上跑了一次，程式是 `overhaul` 的 `c1b9b03`。OMP 用隔離的 agent 目錄，session 檔沒有寫進使用者的 `~/.omp/agent/sessions`。Session 是 `01a186cd-852d-73c6-b0a2-c054bd00aed2`。
+
+- 第一則回覆寫入前執行 `/obw-bind`，被拒絕，原因是還沒有 session 檔；vault 不變。
+- 回覆後 `/obw-bind` 跳出「Replace task binding?」對話框，指出原 owner 是 Pi session `01a13569-ffaa-7115-a3f8-22e398c55825`。這是 OMP 的 `ctx.ui.confirm` 選單，`y` 鍵無效，要選 Yes 後按 Enter。卡片只有 `session` 改變。
+- 第二則訊息顯示「Work start verified」，`## Agent` 下多一個工作中區塊，沒有拒絕警告。這次開始收據（08:37:59.299Z）早於 assistant 訊息（08:38:01.998Z），但 §3.3 的 OMP 時點不保證這個順序。
+- `/obw-sync` 寫入第一行與全文連結，runs 筆記多一段全文。再次 `/obw-sync` 顯示 already recorded，`/obw-unbind` 之後兩個檔案的位元組都不變。
+- Status、priority、relations、三項 criteria 與 Notes 不變。Session 檔有兩筆 `obw-binding`（綁定與解除）與兩筆 `obw-writeback`（開始與 Sync）。
+- 卡片的 owner 留在這個 OMP session，沒有清理，也沒有綁回 Pi。
+
 ### 尚未證明的範圍
 
-OMP 的 binding、開始記錄與 Sync 已實作（§9），但只有單元與 fixture 收據，下列各項都沒有在真實 OMP 上觀測：
+上面的 OMP 驗收只跑了一次文字回合，下列各項仍沒有在真實 OMP 上觀測：
 
-- OMP 的開始記錄改在 `message_end`（§3.4、§9）。真實 `createAgentSession` 加假 provider 的測試顯示：文字回合與 tool call 回合各記錄一次，重送同一個 `message_end` 不重複。這仍是假 provider 與假 vault；真實 model、真實 Obsidian 與 2 秒等待在一般負載下是否足夠，都沒有觀測。
+- Tool call 回合的開始記錄，以及 2 秒等待在高負載下是否足夠。
 - 30 秒 handler 上限下，開始記錄與 model request 的實際先後。
-- 真 PTY 的 `/issue` 導航與 `b`／`u`／`y`／`n` 確認；fixture 只呼叫 component 的 `handleInput`。
-- 真實 OMP session 檔的持久化證明。Fixture 使用 OMP 自己的 title slot serializer 與一個真實 `SessionManager` 案例，其餘案例使用手寫 JSONL。
+- 真 PTY 的 `/issue` 導航與卡片的 `b`／`u`／`y`／`n` 確認；fixture 只呼叫 component 的 `handleInput`。
 - 跨宿主 A10。
 
 Pi 的 A2、延遲請求／session invalidation、tool continuation 去重、error／abort 拒絕、partial-write recovery 等細節有 unit／fixture 契約，沒有把每個故障都注入真實 vault。正式 core 測試來源見 `obw/contracts.test.ts`、`obw/issue.test.ts`、`obw/session.test.ts`、`obw/writeback.test.ts`。
 
 正常模型驗收只直接觀測開始收據早於 assistant-start，沒有直接觀測 HTTP request boundary。使用者批准 SDK 必需的既有 OAuth 自動續期，但驗收沒有直接觀測 refresh；auth／settings／models 的 metadata 未變不等於證明其內容不變。Pre-context failure 不在工作開始覆蓋範圍內。Pi 的 no-model PTY warning 是刻意隔離 auth 的預期結果，不算另一輪模型驗收。
 
-後續須取得 OMP 的真實 vault 驗收，再取得 A10 的真實跨宿主收據。不以 Pi 驗收或 OMP fixture 代替這兩項。
+後續須取得 A10 的真實跨宿主收據，不以單一宿主的驗收代替。
 
 ## 9. 2026-10-29 決定變更
 
