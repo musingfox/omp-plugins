@@ -56,4 +56,15 @@ grep -qF 'Cherry-pick <sha> from diagnose/<slug>' <<<"$handoff" || fail 'repair 
 grep -qF 'Patch: .diagnose/<slug>.patch' <<<"$handoff" || fail 'patch handoff field missing'
 
 
+# Synced with cc 36e825d8 and f0e47acb: abort-safe worktree block, concrete patch command, flip check.
+phase5="$(section '## Phase 5: Failing test at the seam')"
+grep -qxF 'set -e' <<<"$phase0" || fail 'worktree block does not stop at the first failure'
+grep -qF '`<slug>` is a short kebab-case name' <<<"$phase0" || fail 'slug is not defined'
+grep -qF 'format-patch -1 <the commit sha> --stdout > <the literal repo path>/.diagnose/<slug>.patch' <<<"$teardown" || fail 'patch command missing'
+grep -qF 'then flip it against the Phase 4 probe' <<<"$phase5" || fail 'flip step missing from the phase summary'
+grep -qF 're-make the Phase 4 neutralising change' <<<"$phase5" || fail 'flip does not reuse the Phase 4 change'
+grep -qF 'see it red again' <<<"$phase5" || fail 'flip does not check red after restore'
+grep -qF '(`diagnose` or `diagnose-now`)' "$METHOD" || fail 'HITL template source is not named'
+if grep -qF 'the entry gave you' "$METHOD"; then fail 'old HITL wording remains'; fi
+
 printf 'diagnose lifecycle contracts: ok\n'

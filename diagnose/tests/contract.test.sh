@@ -19,9 +19,15 @@ grep -q 'it never applies the fix' "$METHOD"
 if grep -qF '/cf' "$METHOD" "$COMMAND"; then echo "contract.test.sh:$LINENO: forbidden match" >&2; exit 1; fi
 
 # OMP package and interaction/resource mappings; reject Claude-only contracts.
-grep -q '"omp": {}' "$ROOT/package.json"
+grep -q '"omp": {' "$ROOT/package.json"
 grep -q 'OMP `ask`' "$SKILL"
 grep -q '\${OMP_PLUGIN_ROOT}' "$COMMAND"
 if grep -R -qE 'CLAUDE_PLUGIN_ROOT|AskUserQuestion|disable-model-invocation|TaskStop|Monitor' "$ROOT/skills" "$ROOT/commands" "$ROOT/docs" "$ROOT/scripts"; then echo "contract.test.sh:$LINENO: forbidden match" >&2; exit 1; fi
+
+# Narrow trigger: the cause-finding loop, not any broken thing; manifest records the upstream sync.
+grep -q 'Find the confirmed cause of a bug' "$SKILL"
+grep -q 'not for a quick fix' "$SKILL"
+if grep -q 'throwing, failing, or slow' "$SKILL"; then echo "contract.test.sh:$LINENO: forbidden match" >&2; exit 1; fi
+grep -q '"upstream": "b4555826"' "$ROOT/package.json"
 
 printf 'diagnose contract fixtures: ok\n'
