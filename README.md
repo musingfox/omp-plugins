@@ -21,6 +21,7 @@ omp plugin link --local /path/to/omp-plugins/agent-browser
 omp plugin link --local /path/to/omp-plugins/apple-podcasts
 omp plugin link --local /path/to/omp-plugins/hook-guard
 omp plugin link --local /path/to/omp-plugins/wizard
+omp plugin link --local /path/to/omp-plugins/zen-agent
 omp plugin link --local /path/to/omp-plugins/audit
 omp plugin link --local /path/to/obsidian-skills   # after adding package.json with "omp": {}
 omp plugin list
@@ -45,6 +46,7 @@ Reload in-session: `/reload-plugins`.
 | **apple-podcasts** | — | Apple Podcasts episode audio URL resolution |
 | **hook-guard** | `/hook-guard` | Guided Git hook setup and commit checks |
 | **wizard** | — | Human-operated setup and credential wizards |
+| **zen-agent** | — | Visible second Zen browser the user can watch and take over |
 | **audit** | — | Docs and milestone-test audits |
 | **obsidian** (kepano) | skills `obsidian-cli`, `obsidian-markdown`, `obsidian-bases`, `json-canvas`, `defuddle` | vault I/O syntax for `obw` |
 

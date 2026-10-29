@@ -1,0 +1,140 @@
+#!/usr/bin/env bash
+# Run the agent Zen: a second Zen on its own profile, with WebDriver BiDi and
+# Marionette on, beside the user's everyday Zen.
+set -uo pipefail
+
+ZEN_BIN="${ZEN_AGENT_APP:-/Applications/Zen.app}/Contents/MacOS/zen"
+PROFILE="${ZEN_AGENT_PROFILE:-$HOME/.cache/zen-agent-profile}"
+BIDI_PORT="${ZEN_AGENT_BIDI_PORT:-9333}"
+MARIONETTE_PORT="${ZEN_AGENT_MARIONETTE_PORT:-2828}"
+LOG="${ZEN_AGENT_LOG:-${TMPDIR:-/tmp}/zen-agent.log}"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Pinned to the version this plugin was verified against.
+MCP_PKG="@mozilla/firefox-devtools-mcp@0.10.6"
+
+usage() {
+  cat <<EOF
+usage: zen-agent <command>
+  start [--headless] launch the agent Zen if it is not running
+  status             print whether it runs, and in which mode (exit 1 when it does not)
+  stop               quit the agent Zen; its tabs come back on the next launch
+  headed | headless  make it run in that mode, restarting it if needed
+  open URL           show URL in the agent Zen, launching it if needed
+  run SCRIPT.ts      run a puppeteer script against it; see lib/run.ts
+  cookies DOMAIN...  copy DOMAIN's cookies from your everyday Zen profile
+  mcp                run the firefox-devtools MCP server against it
+  setup-shell        make agents in Rex shells open URLs in the agent Zen
+EOF
+}
+
+listening() { lsof -nP -iTCP:"$1" -sTCP:LISTEN >/dev/null 2>&1; }
+running() { listening "$BIDI_PORT"; }
+pid() { lsof -nP -t -iTCP:"$BIDI_PORT" -sTCP:LISTEN 2>/dev/null | head -1; }
+mode() { ps -o args= -p "$(pid)" | grep -q -- --headless && echo headless || echo headed; }
+
+# Rewritten on every launch: the profile belongs to this script.
+prepare_profile() {
+  mkdir -p "$PROFILE/chrome"
+  cat >"$PROFILE/user.js" <<'EOF'
+user_pref("toolkit.legacyUserProfileCustomizations.stylesheets", true);
+user_pref("browser.startup.page", 3);
+// A restored tab left unloaded has no browsing context, so the MCP cannot list it.
+user_pref("browser.sessionstore.restore_on_demand", false);
+EOF
+  # A red frame and tint so the agent Zen never passes for the everyday one.
+  cat >"$PROFILE/chrome/userChrome.css" <<'EOF'
+#zen-tabbox-wrapper { outline: 3px solid #e5484d !important; outline-offset: -3px; }
+#navigator-toolbox { background-color: color-mix(in srgb, #e5484d 25%, transparent) !important; }
+EOF
+}
+
+stop() {
+  local p; p="$(pid)"
+  [ -n "$p" ] || return 0
+  # A quit request to this pid only: SIGTERM skips the session save that brings
+  # the tabs back, and quitting by bundle id would hit the everyday Zen too.
+  osascript -l JavaScript -e "ObjC.import('AppKit');
+    \$.NSRunningApplication.runningApplicationWithProcessIdentifier($p).terminate" >/dev/null
+  for _ in $(seq 30); do
+    running || return 0
+    sleep 0.5
+  done
+  echo "zen-agent: Zen (pid $p) did not quit" >&2
+  return 1
+}
+
+launch() {
+  [ -x "$ZEN_BIN" ] || { echo "zen-agent: Zen not found at $ZEN_BIN" >&2; return 1; }
+  prepare_profile
+  # --no-remote keeps this launch from being handed to the everyday Zen.
+  nohup "$ZEN_BIN" --profile "$PROFILE" --no-remote --marionette \
+    --remote-debugging-port "$BIDI_PORT" "$@" >"$LOG" 2>&1 &
+  for _ in $(seq 30); do
+    listening "$BIDI_PORT" && listening "$MARIONETTE_PORT" && return 0
+    sleep 0.5
+  done
+  echo "zen-agent: Zen did not open ports $BIDI_PORT/$MARIONETTE_PORT; see $LOG" >&2
+  return 1
+}
+
+cmd="${1:-}"; shift || true
+case "$cmd" in
+  start)
+    [ "$#" -eq 0 ] || [ "$*" = --headless ] || { echo "usage: zen-agent start [--headless]" >&2; exit 2; }
+    running && { echo "zen-agent: already running ($(mode))"; exit 0; }
+    launch "$@" && echo "zen-agent: started (BiDi $BIDI_PORT, Marionette $MARIONETTE_PORT)"
+    ;;
+  status)
+    if running; then echo "running $(mode) (profile $PROFILE)"; else echo "not running"; exit 1; fi
+    ;;
+  stop)
+    stop && echo "zen-agent: stopped"
+    ;;
+  headed|headless)
+    if running; then
+      [ "$(mode)" = "$cmd" ] && { echo "zen-agent: already $cmd"; exit 0; }
+      stop || exit 1
+    fi
+    if [ "$cmd" = headless ]; then launch --headless; else launch; fi && echo "zen-agent: running $cmd"
+    ;;
+  open)
+    [ "$#" -eq 1 ] && [[ "$1" =~ ^https?:// ]] || { echo "usage: zen-agent open http(s)://..." >&2; exit 2; }
+    # A headless Zen would hide the page from the user.
+    running && [ "$(mode)" = headless ] && { stop || exit 1; }
+    if running; then
+      # A launch on the same profile hands the URL to the running agent Zen.
+      "$ZEN_BIN" --profile "$PROFILE" "$1" >/dev/null 2>&1
+    else
+      launch "$1"
+    fi
+    ;;
+  run)
+    [ "$#" -eq 1 ] && [ -f "$1" ] || { echo "usage: zen-agent run SCRIPT.ts" >&2; exit 2; }
+    running || { echo "zen-agent: not running; run zen-agent start" >&2; exit 1; }
+    [ -d "$HERE/../node_modules/puppeteer-core" ] ||
+      bun install --cwd "$HERE/.." --frozen-lockfile >&2 || exit 1
+    exec bun "$HERE/../lib/run.ts" "$BIDI_PORT" "$1"
+    ;;
+  cookies)
+    [ "$#" -ge 1 ] || { echo "usage: zen-agent cookies DOMAIN..." >&2; exit 2; }
+    running || { echo "zen-agent: not running; run zen-agent start" >&2; exit 1; }
+    exec bun "$HERE/../lib/cookies.ts" "$BIDI_PORT" "$@"
+    ;;
+  mcp)
+    exec npx -y "$MCP_PKG" --connect-existing --marionette-port "$MARIONETTE_PORT" --idle-timeout 120
+    ;;
+  setup-shell)
+    conf="$HOME/.config/fish/conf.d/zen-agent.fish"
+    mkdir -p "$(dirname "$conf")"
+    cat >"$conf" <<EOF
+# Written by zen-agent setup-shell. In Rex, agents' URLs open in the agent Zen;
+# bin/open hands everything from a human shell to /usr/bin/open.
+if test "\$TERM_PROGRAM" = rex
+    fish_add_path --global --move --prepend $HERE
+    set -gx BROWSER $HERE/open
+end
+EOF
+    echo "zen-agent: wrote $conf"
+    ;;
+  *) usage; [ -z "$cmd" ] || [ "$cmd" = help ] || exit 2 ;;
+esac

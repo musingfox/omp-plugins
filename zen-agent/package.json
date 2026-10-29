@@ -1,0 +1,12 @@
+{
+  "name": "zen-agent",
+  "private": true,
+  "version": "0.1.1",
+  "description": "A second Zen on its own profile for agents to drive over WebDriver BiDi, beside your everyday Zen",
+  "dependencies": {
+    "puppeteer-core": "25.16.0"
+  },
+  "omp": {
+    "upstream": "b4555826"
+  }
+}
