@@ -51,4 +51,5 @@ Markdown slash names are filenames; extensions may also register commands. Skill
 ## Develop locally
 
 ```bash
+omp plugin link --local /path/to/omp-plugins/viz
 ```

@@ -7,7 +7,7 @@ read-only investigation, `ask` for human input, and `hub` for process
 lifecycles) rather than provider-specific tools. Resolve package resources from
 `${OMP_PLUGIN_ROOT}`. The diagnosis produces evidence only: a confirmed cause
 and exactly one failing regression test (or a minimised repro when no correct
-seam exists); it never applies the fix. the main session owns the repair after hand-off.
+seam exists); it never applies the fix. The main session owns the repair after hand-off.
 
 When exploring the codebase, read `CONTEXT.md` (if it exists) to get a clear mental model of the relevant modules, and check ADRs in the area you're touching.
 
