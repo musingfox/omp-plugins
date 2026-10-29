@@ -7,7 +7,7 @@ description: Interactively create `.obsidian.yaml`, install templates, bootstrap
 
 Run directly in the main context; the flow is interactive via OMP `ask`.
 
-1. **Existing config** — If `.obsidian.yaml` exists, show vault/project and ask whether to overwrite. If declined, read its `vault` and `pm.project`, then continue with bootstrap/migration.
+1. **Existing config** — If `.obsidian.yaml` exists, show vault/project and ask whether to overwrite. If declined, read its `vault` and `pm.project`, resolve `$VAULT_PATH` from the `obsidian.json` entry whose path basename matches that `vault` name (the step 2 listing, without asking), then jump to step 5 so bootstrap and migration still run. If no entry matches, report it and stop. This is the **keep-config** path.
 2. **Choose vault** — Read Obsidian's config (`~/Library/Application Support/obsidian/obsidian.json`; Linux `~/.config/obsidian/obsidian.json`; Windows `%APPDATA%/obsidian/obsidian.json`) and ask the user to choose one. Resolve both vault name and path; never guess.
 3. **Ask options** — project identifier (default current directory basename; `skip` omits `pm`), long-form default folder (`Inbox`), and filename strategy (`title`, `slug`, or `timestamp-title`). Explain that Daily Notes settings remain in Obsidian and quick capture keeps inline tags.
 4. **Install templates** — Read `$VAULT_PATH/.obsidian/templates.json`. If missing, tell the user to enable Templates and stop. Empty `.folder` means vault root. Create the folder if needed and copy `${OMP_PLUGIN_ROOT}/templates/task.md` and `doc.md` only when each destination is absent. Never overwrite user templates.
@@ -17,8 +17,8 @@ Run directly in the main context; the flow is interactive via OMP `ask`.
    - Missing `title`: ask first; for notes lacking it, set one property per note from the un-kebabbed filename (`implement-auth` → `Implement Auth`). Existing titles and non-kebab filenames remain unchanged. Report counts only.
    - Stale dashboards: do not compare them here. Tell the user to run `/obw-pm refresh dashboard`, which compares each dashboard with the template as parsed YAML and regenerates only an unedited one without asking.
    Each migration component may be skipped independently; report only performed work.
-7. **Write `.obsidian.yaml`** with the template below, omitting `pm` when skipped.
-8. **Offer** adding `.obsidian.yaml` to `.gitignore`.
+7. **Write `.obsidian.yaml`** with the template below, omitting `pm` when skipped. On the keep-config path, skip this step: never write `.obsidian.yaml`; the existing file stays as it was.
+8. **Offer** adding `.obsidian.yaml` to `.gitignore`. On the keep-config path, skip the question if `.gitignore` already lists it.
 
 ```yaml
 # Obsidian Workspace configuration
@@ -32,7 +32,7 @@ pm:
   project: <PROJECT_NAME>
 ```
 
-Confirm with:
+Confirm with the summary below. On the keep-config path, the first line reads `.obsidian.yaml kept (vault=<NAME>, project=<PROJ>).` and the Templates line is omitted, since step 4 did not run:
 
 ```
 .obsidian.yaml created (vault=<NAME>, project=<PROJ>).
