@@ -69,18 +69,20 @@
 Repo 的 pre-commit 會對每個 commit 跑 `bun run --cwd obw check`。新的 worktree 沒有 `obw/node_modules`，第一次 commit 前要先跑 `cd obw && bun install --frozen-lockfile`。
 
 - **M0　obw 雙宿主變更落地。** 已完成（`9ec6061`、`7c24fe8`、`ea3b76e`）。`9ec6061` 單獨 checkout 時仍釘 pi 1.1.0，本機無法跑它的 check；開 PR 前把 `7c24fe8` 併進去。
-- **M1　安全與資料錯寫修正。** 修 agent-browser 的憑證建議、obw jot 的 `vault=`、obw wikilink JSON 陣列、viz 兩個 feedback bug。完成條件是每項各有一個先紅後綠的測試或可重跑的檢查。
-- **M2　method 骨架在 OMP 跑通。** 移植 SKILL.md、narrow.md 與 review、divergence、probe、prototype 四個 agent，以 `task` 派出並用 inline `ask`。viz 決策頁、背景喚醒、gate 與巢狀派工先用 stub。完成條件是在 omp session 裡把一個問題收斂成 `contracts.json`。
-- **M3　method 補上 gate。** 移植 `check-contracts.sh`、`scope-gate.sh`、`revert-gate.sh`、`add-repros.sh` 與其測試。
-- **M4　method 補上決策頁。** 接上 viz，帶走 `spiral/tests/render-decision.test.sh` 的 semver fixture。依賴 M7。
-- **M5　刪除 cf、spiral、pi-dispatch 並改接手方。** 刪目錄、`omp plugin unlink`，把 diagnose（含兩個測試）、deepen、spec、README 的 `/cf`、`/spiral` 改成交回主 session。完成條件是 `grep -rn '/cf\|spiral\|context-flow'` 在 repo 內沒有殘留。
-- **M6　文字層同步。** adr、wizard、spec、deepen（`docs/decisions/`、Design Vocabulary）、diagnose（Phase 5、`set -e`、`format-patch`）、apple-podcasts。
-- **M7　viz 換成 Pele 與 Flexoki。**
-- **M8　hook-guard 重建。** 依 cc 版補回 `pre-commit-checks.md` 與 hook 腳本。
-- **M9　obw 追上 cc。** pm 工具、ADR 移除、dashboard 範本、刪除 `obw/viz.ts`。
+- **M1　安全與資料錯寫修正。** 已完成（`4828227`、`1faf006`、`e7242a7`、`934cea5`）。修 agent-browser 的憑證建議、obw jot 的 `vault=`、obw wikilink JSON 陣列、viz 兩個 feedback bug。完成條件是每項各有一個先紅後綠的測試或可重跑的檢查。
+- **M2　method 骨架在 OMP 跑通。** 已完成（`8b60521`、`47d23db`、`52328b1`）。以 `omp plugin link --local` 安裝後，在真實 `omp -p --no-session` 裡把一個問題收斂成 `contracts.json`，`check-contracts.sh` 通過。移植 SKILL.md、narrow.md 與 review、divergence、probe、prototype 四個 agent，以 `task` 派出並用 inline `ask`。viz 決策頁、背景喚醒、gate 與巢狀派工先用 stub。完成條件是在 omp session 裡把一個問題收斂成 `contracts.json`。
+- **M3　method 補上 gate。** 已完成（`703518d`、`2cc6f2f`）。四個腳本與 cc `b4555826` 逐位元組相同。移植 `check-contracts.sh`、`scope-gate.sh`、`revert-gate.sh`、`add-repros.sh` 與其測試。
+- **M4　method 補上決策頁。** 已完成（`4a108e4`、`dc413ca`），背景喚醒也一併移植：OMP 的 `async: true` bash 工作完成時會替閒置的 session 開新回合，等待要用 `timeout: 0`。未處理：使用者在終端機回答、agent 寫回 brief 時，若同時有頁面儲存，兩者會互相覆蓋。接上 viz，帶走 `spiral/tests/render-decision.test.sh` 的 semver fixture。依賴 M7。
+- **M5　刪除 cf、spiral、pi-dispatch 並改接手方。** 已完成（`8d5e2a7`、`4b2a12b`、`9b5d403`、`6736649`）。刪目錄、`omp plugin unlink`，把 diagnose（含兩個測試）、deepen、spec、README 的 `/cf`、`/spiral` 改成交回主 session。完成條件是 `grep -rn '/cf\|spiral\|context-flow'` 在 repo 內沒有殘留。
+- **M6　文字層同步。** 已完成（`2ada91c`、`654e180`、`1e35d6d`、`5e7c5c9`、`5c7b655`、`356c28c`）。apple-podcasts 檢查音訊網址時改用 `curl -sIL`，因為 OMP `read` 不給狀態碼且會下載整個音訊。spec 沒有在 M6 同步，改由 M14 處理。adr、wizard、spec、deepen（`docs/decisions/`、Design Vocabulary）、diagnose（Phase 5、`set -e`、`format-patch`）、apple-podcasts。
+- **M7　viz 換成 Pele 與 Flexoki。** 已完成（`a0c7786`、`3b477b2`、`5f4375c`）。
+- **M8　hook-guard 重建。** 已完成（`6ba1912`、`85b9185`）。依 cc 版補回 `pre-commit-checks.md` 與 hook 腳本。
+- **M9　obw 追上 cc。** 已完成（`2661396` 至 `ea3909f`，共 7 個 commit）。drift 報告 `drift-viz-obw-spec.md` 的 obw (a) 項目 2、6、8、9、10、11、15、20、27 不在範圍內，仍待處理。pm 工具、ADR 移除、dashboard 範本、刪除 `obw/viz.ts`。
 - **M10　obw 的 OMP 端 bind／sync。** 延續 `dual-host-plan.md` §8 未完成的部分。
-- **M11　移植 audit。**
-- **M12　移植 zen-agent。** 完成後讓 agent-browser 把可見瀏覽器交給它。
+- **M11　移植 audit。** 已完成（`c5dd1ab`、`c03e72d`）。
+- **M12　移植 zen-agent。** 已完成（`dca0be9`、`f30777d`、`b4b81d4`、`ba47597`）。未驗證：OMP 走 PTY 的 shell 是否也設定 `AGENT=1`。完成後讓 agent-browser 把可見瀏覽器交給它。
+- **M13　obw skill 與範本的剩餘項目。** drift 報告 obw 第 2、6、8、9、10、11、15、27 項。第 20 項（`/issue` 的篩選與排序鍵）屬可選的 UX，延後。
+- **M14　spec 同步。** 「check 要先在違規版本上變紅」規則、verdict 來自檔案的範例、glossary 觸發語。
 
 執行順序是 M0、M1、M5、M2、M3、M4；其餘彼此獨立，可平行。M5 提到 M2 之前有兩個理由：cc 的交接對象是主 session，不依賴 method；OMP 依名稱去重 agent，先載入者勝（OMP 18.13.3 `src/task/discovery.ts:157-161`），spiral 的 divergence、probe、prototype 會遮住 method 的同名 agent。M4 要的 semver fixture 用 `git show dadb051:spiral/tests/render-decision.test.sh` 取回。
 
