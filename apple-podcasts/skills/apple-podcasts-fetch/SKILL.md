@@ -38,49 +38,40 @@ Use a URL parser, not a loose text split:
 - Read the `i` query parameter as `track_id`; require a non-empty numeric value.
 - Preserve IDs as strings while comparing, so no precision is lost.
 
-If the host, show ID, or episode `i` parameter is absent, stop and tell the user that
-an episode-specific Apple Podcasts URL containing `?i=<track_id>` is required. Do not
-silently treat a show URL as an episode. You may offer to resolve a recent episode only
-if the user explicitly asks for episode selection.
+If the host or show ID is absent, stop and tell the user that an Apple Podcasts
+episode URL is required. If only `?i=` is absent, run step 2, list the recent episodes
+(`trackName`, `releaseDate`, `trackId`) with OMP `ask` for the user to choose, and
+continue with the chosen `trackId` as `track_id`. Do not silently pick an episode.
 
-## 2. Look up the show RSS feed
+## 2. Look up the show and its episodes
 
-Request:
-
-```
-https://itunes.apple.com/lookup?id={show_id}
-```
-
-Parse JSON and require a successful response with a non-empty `results` array and a
-string `results[0].feedUrl`. Keep `collectionName` for display when present. If the
-request fails, JSON is invalid, the result is empty, or `feedUrl` is missing, report that
-the iTunes show lookup could not identify an RSS feed and stop; do not attempt a guessed
-feed URL.
-
-## 3. Look up the episode GUID (and try the shortcut)
-
-Request:
+One request returns the podcast and its most recent episodes:
 
 ```
 https://itunes.apple.com/lookup?id={show_id}&entity=podcastEpisode&limit=200
 ```
 
-Find the result whose `trackId`, converted to a string, equals `track_id`. Do not use
-array position: result 0 is commonly show metadata. Require a non-empty `episodeGuid`.
-Keep `trackName`, `releaseDate`, and `episodeUrl` when present for the final response.
+Parse JSON and require a successful response with a non-empty `results` array. Result 0
+is the show: require a string `results[0].feedUrl` and keep `collectionName` for
+display when present. The remaining results are episodes. If the request fails, JSON is
+invalid, the result is empty, or `feedUrl` is missing, report that the iTunes lookup
+could not identify the show or its RSS feed and stop; do not attempt a guessed feed URL.
 
-If there is no matching episode, explain that iTunes did not return this episode (the
-API is limited and older episodes may be absent), and ask for a corrected URL or another
-way to identify the episode. Do not claim that the episode does not exist globally.
+## 3. Match the episode and try the shortcut
 
-If the matching result has an `episodeUrl`, it is a shortcut candidate. Validate it with
-an OMP HTTP request and accept it only when it is an absolute HTTP(S) URL and the request
-is successful (2xx/3xx, or another clearly successful media response). If it is missing,
-malformed, blocked, or fails, continue to RSS; do not return a merely plausible URL.
+Find the episode whose `trackId`, converted to a string, equals `track_id`. Do not use
+array position. Require a non-empty `episodeGuid`. Keep `trackName`, `releaseDate`, and
+`episodeUrl` when present for the final response.
 
-If the episode lookup request fails or its JSON is invalid, report that episode lookup
-failed and stop unless a valid shortcut result was already obtained (normally it will
-not be).
+If there is no matching episode, explain that the episode is not among the newest 200
+the iTunes API returns, so older episodes cannot be resolved this way, and ask for a
+corrected URL or another way to identify the episode. Do not claim that the episode
+does not exist globally.
+
+If the matching result has an `episodeUrl`, it is a shortcut candidate. Validate it
+with an OMP HTTP request and accept it only when it is an absolute HTTP(S) URL and the
+response is HTTP 200 with an `audio/*` content type. If it is missing, malformed,
+blocked, or fails this check, continue to RSS; do not return a merely plausible URL.
 
 ## 4. Resolve the RSS enclosure by GUID
 
@@ -90,7 +81,8 @@ equals the iTunes `episodeGuid` after the same normalization. Account for the no
 RSS namespace/prefix forms when selecting `item`, `guid`, and `enclosure`.
 
 From the matching item, require `<enclosure url="...">` and an absolute HTTP(S) URL.
-The enclosure URL is the authoritative fallback audio URL. Also extract `<title>` and
+The enclosure URL is the authoritative fallback audio URL; verify it the same way as
+the shortcut (HTTP 200 and an `audio/*` content type) before returning it. Also extract `<title>` and
 `<pubDate>` when available. If the GUID is present but enclosure is absent or malformed,
 report that the RSS item has no usable audio enclosure. If no matching GUID exists,
 report that the iTunes episode and RSS feed disagree; do not select an item by title,
@@ -110,7 +102,7 @@ media unless the user asks.
 
 On any failure, state exactly which stage failed and the actionable next step:
 
-- invalid/non-episode Apple URL → request a URL containing `?i=`;
+- invalid Apple URL (host or show ID missing) → request an Apple Podcasts episode URL;
 - show lookup/RSS URL failure → retry later or provide a different Apple URL;
 - episode absent from iTunes results → ask for corrected URL or episode selection;
 - RSS unavailable/invalid or GUID/enclosure mismatch → return a validated iTunes
@@ -118,3 +110,12 @@ On any failure, state exactly which stage failed and the actionable next step:
 
 Never hide a failed source behind a guessed URL, Apple page scraping, title-only match,
 or fabricated fallback.
+
+## Limitations
+
+- The iTunes lookup returns at most the newest 200 episodes (`limit` caps at 200), so
+  older episodes cannot be resolved; say so when step 3 finds no match.
+- The iTunes API has no direct episode lookup: `/lookup?id={track_id}` returns empty
+  results, so the show lookup is always required.
+- RSS feeds can be several MB; extract the needed item rather than reading the whole
+  feed into context.
