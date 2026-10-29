@@ -4,7 +4,7 @@ Native [oh-my-pi](https://github.com/can1357/oh-my-pi) plugins. Skills/commands 
 
 Each plugin is an OMP package: `package.json` with `"omp": {}`, plus conventional `commands/` and `skills/`. There is no marketplace catalog and no `.claude-plugin/` layout.
 
-`obw` also has a Pi extension for task browsing, persistent binding, work-start recording, and explicit reply sync. The OMP extension now has the same commands, tested with fixtures and a fake-provider OMP session, and with no live OMP acceptance yet. Its OMP skills are not Pi prompts, and full cross-host acceptance remains incomplete. See [OBW host support and acceptance](obw/README.md).
+`obw` also has a Pi extension for task browsing, persistent binding, work-start recording, and explicit reply sync. The OMP extension has the same commands. Each host has one live acceptance run against a real vault and model, on pi 1.4.0 and OMP 18.13.3. Its OMP skills are not Pi prompts, and cross-host acceptance remains incomplete. See [OBW host support and acceptance](obw/README.md).
 
 Claude Code ports live in [cc-plugins](https://github.com/musingfox/cc-plugins).
 
@@ -38,7 +38,7 @@ Reload in-session: `/reload-plugins`.
 | Name | Slash commands | Description |
 |------|----------------|-------------|
 | **viz** | `/viz-inline`, `/viz-render` | chat shapes and browser HTML |
-| **obw** | `/issue`, `/obw-bind`, `/obw-unbind`, `/obw-sync`; OMP tools: `pm_tick`, `pm_note`, `pm_status`; OMP skills: `/obw-init`, `/obw-jot`, `/obw-pm` | Obsidian tasks; writeback live-verified on Pi, fixture-tested on OMP; OMP skills |
+| **obw** | `/issue`, `/obw-bind`, `/obw-unbind`, `/obw-sync`; OMP tools: `pm_tick`, `pm_note`, `pm_status`; OMP skills: `/obw-init`, `/obw-jot`, `/obw-pm` | Obsidian tasks; writeback live-verified on Pi and OMP; OMP skills |
 | **spec** | — | Architecture contracts and domain glossary |
 | **diagnose** | `/diagnose-now` | Evidence-only bug diagnosis and main-session handoff |
 | **deepen** | — | Architecture survey from user scope or git hotspots |

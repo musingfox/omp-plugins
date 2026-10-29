@@ -80,7 +80,7 @@ Repo 的 pre-commit 會對每個 commit 跑 `bun run --cwd obw check`。新的 w
 - **M9　obw 追上 cc。** 已完成。drift 報告 `drift-viz-obw-spec.md` 的其餘 obw (a) 項目由 M13 處理。pm 工具、ADR 移除、dashboard 範本、刪除 `obw/viz.ts`。
 - **M10　obw 的 OMP 端 bind／sync。** 已完成，並在真實 OMP 與 Obsidian 上驗收一次（`obw/docs/dual-host-plan.md` §8）。OMP 沒有「使用者訊息已存、請求未送」的事件，使用者決定 OMP 的工作開始改在 `message_end` 記錄，可能晚於請求開始。延續 `dual-host-plan.md` §8 未完成的部分。
 - **M11　移植 audit。** 已完成。
-- **M12　移植 zen-agent。** 已完成。未驗證：OMP 走 PTY 的 shell 是否也設定 `AGENT=1`。完成後讓 agent-browser 把可見瀏覽器交給它。
+- **M12　移植 zen-agent。** 已完成。2026-10-29 在真實 OMP 上觀測到，PTY 模式的 bash 沒有 `AGENT=1`，非 PTY 才有（OMP `src/tools/bash-interactive.ts:35-41`、`src/exec/non-interactive-env.ts:32`）。所以從 PTY 呼叫的 `open URL` 不會轉給 zen-agent（`zen-agent/bin/open:9`）。完成後讓 agent-browser 把可見瀏覽器交給它。
 - **M13　obw skill 與範本的剩餘項目。** 已完成。第 7 項（舊版遷移檢查拆到參考檔）仍待處理。drift 報告 obw 第 2、6、8、9、10、11、15、27 項。第 20 項（`/issue` 的篩選與排序鍵）屬可選的 UX，延後。
 - **M14　spec 同步。** 已完成。「check 要先在違規版本上變紅」規則、verdict 來自檔案的範例、glossary 觸發語。
 - **M15　agent-browser 補齊上游。** 已完成。移植 cc `83238191`、`2e11b620`，並補完 `f1ac52c3` 刪掉的 `references/commands.md`。與 cc `b4555826` 的 skills 只差 `allowed-tools`，因為 OMP 不以它預先核准指令（`src/discovery/agent-plugin-format.ts:94,155-157`）。

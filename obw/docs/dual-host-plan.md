@@ -198,8 +198,8 @@ Live fixture 與正常模型測試只寫批准的 task／runs；所有 vault I/O
 ### 留存狀態
 
 - Vault 是 `obsidian`，project 是 `obw-dual-host-test`。卡片是 `pm/obw-dual-host-test/tasks/dual-host-smoke.md`，runs 是 `pm/obw-dual-host-test/runs/dual-host-smoke.md`。
-- Owner 是原 Pi SID `01a13569-ffaa-7115-a3f8-22e398c55825`；同原 session file 的 active leaf 是 `de4cf6b3`，bound。Primary 只在 PTY Bind 階段新增兩筆 binding entries，舊 source message IDs 保持。
-- 卡片留三個 Agent blocks：一筆手動 fixture 結果、一筆正常模型工作的開始、一筆正常模型結果。Runs 留兩筆全文。沒有刪除或清理測試資料。
+- 這一段記的是 2026-10-13 的狀態。當時 owner 是原 Pi SID `01a13569-ffaa-7115-a3f8-22e398c55825`；同原 session file 的 active leaf 是 `de4cf6b3`，bound。Primary 只在 PTY Bind 階段新增兩筆 binding entries，舊 source message IDs 保持。之後 owner 的變化見下面兩段 2026-10-29 驗收。
+- 2026-10-13 時卡片留三個 Agent blocks：一筆手動 fixture 結果、一筆正常模型工作的開始、一筆正常模型結果。Runs 留兩筆全文。沒有刪除或清理測試資料。
 - Aux SID `01a135d2-76a0-73b3-bcdd-9b61b10ee8d2` 的 scratch 歷史保留曾綁定的 marker，但不是卡片最後的 owner。SDK 自然補入的 thinking metadata `a8320070` 已取得批准；拒絕／Exit 比較使用 startup 後 baseline，不把它算作模型回合或 Bind 效果。
 
 ### OMP 驗收（2026-10-29）
@@ -213,13 +213,25 @@ Live fixture 與正常模型測試只寫批准的 task／runs；所有 vault I/O
 - Status、priority、relations、三項 criteria 與 Notes 不變。Session 檔有兩筆 `obw-binding`（綁定與解除）與兩筆 `obw-writeback`（開始與 Sync）。
 - 卡片的 owner 留在這個 OMP session，沒有清理，也沒有綁回 Pi。
 
+### Pi 1.4.0 驗收（2026-10-29）
+
+同一天在正式 pi 1.4.0、真 Obsidian CLI 與 `anthropic/claude-haiku-4-5` 上跑了一次，程式是 `84ca2cc`。`PI_CODING_AGENT_DIR` 指向隔離目錄，`~/.pi/agent` 的檔案前後 stat 相同。只載入 obw（`--no-extensions -e obw/pi.ts`），所以沒有驗到 obw 與其他 extension 同時載入。Session 是 `01a1872e-a0b3-7357-9926-f977c45b1340`，共兩個模型回合。
+
+- 四個指令各註冊一次。tmux 裡的 `/issue` 能開卡、Back、Escape，vault 不變。
+- 第一個回合後 `/obw-bind` 跳出「Replace task binding?」，指出原 owner 是上面的 OMP session。選 Yes 後卡片只有 `session` 改變，entry 是 `6bf21e1b`。
+- 第二則訊息顯示「Work start verified」。開始收據 `bef10e3d`（10:24:04.654Z）早於 assistant `455ac965`（10:24:05.443Z），sync 前 runs 不變。
+- `/obw-sync` 寫入第一行與全文，引號、wikilink 與反斜線原樣保留，收據 `840cccd5`。再次 sync 顯示 already recorded，`/obw-unbind`（`027112ab`）之後兩檔 bytes 都不變。
+- Status、priority、relations、三項 criteria 與 Notes 不變。
+- 卡片 owner 現在是這個 Pi session，該 session 已 unbind。沒有清理測試資料。
+- 卡片頁沒有捲動：`obw/issue.ts:120-123` 把整份內文排進畫面，45 列的終端機看不到最後一個 Agent 區塊與 `## Notes`。這不影響上面各項，尚未修。
+
 ### 尚未證明的範圍
 
 上面的 OMP 驗收只跑了一次文字回合，下列各項仍沒有在真實 OMP 上觀測：
 
 - Tool call 回合的開始記錄，以及 2 秒等待在高負載下是否足夠。
 - 30 秒 handler 上限下，開始記錄與 model request 的實際先後。
-- 真 PTY 的 `/issue` 導航與卡片的 `b`／`u`／`y`／`n` 確認；fixture 只呼叫 component 的 `handleInput`。
+- 卡片的 `b`／`u`／`y`／`n` 確認；fixture 只呼叫 component 的 `handleInput`。2026-10-29 的 OMP 冒煙只在真 PTY 做了 `/issue` 唯讀導航（開卡、Back、Escape），沒有按這些鍵。
 - 跨宿主 A10。
 
 Pi 的 A2、延遲請求／session invalidation、tool continuation 去重、error／abort 拒絕、partial-write recovery 等細節有 unit／fixture 契約，沒有把每個故障都注入真實 vault。正式 core 測試來源見 `obw/contracts.test.ts`、`obw/issue.test.ts`、`obw/session.test.ts`、`obw/writeback.test.ts`。
@@ -232,7 +244,7 @@ Pi 的 A2、延遲請求／session invalidation、tool continuation 去重、err
 
 使用者在 2026-10-29 改變了兩項先前的決定，作為 `docs/overhaul-plan.md` 的 M0：
 
-- 檢查釘選的宿主版本改為 OMP 18.13.3 與 pi 1.4.0，與本機安裝一致。本機的 OMP 執行檔已自我更新到 18.13.3，但 `~/node_modules` 的 package 仍是 17.3.4；這次用 `bun add --exact` 把 package 補到 18.13.3。§8 的 Pi 驗收是在 1.1.0 上做的，沒有在 1.4.0 重做；pi 1.4.0 只有 strict typecheck、正式 loader 與單元測試的收據。
+- 檢查釘選的宿主版本改為 OMP 18.13.3 與 pi 1.4.0，與本機安裝一致。本機的 OMP 執行檔已自我更新到 18.13.3，但 `~/node_modules` 的 package 仍是 17.3.4；這次用 `bun add --exact` 把 package 補到 18.13.3。§8 的 Pi 驗收是在 1.1.0 上做的，當時沒有在 1.4.0 重做；同日稍晚才補上 §8 的 Pi 1.4.0 驗收。
 - OMP typecheck 改用 `skipLibCheck`，只限 omp 目標。18.13.3 的 published declaration graph 有 48 個自身錯誤：@huggingface/tokenizers 42 個、@huggingface/transformers 2 個、OMP 自己的套件 4 個；OBW 原始碼沒有錯誤。Pi、core 與 tools 的檢查仍不使用 skipLibCheck。設定見 `obw/tools/typecheck-config.mjs`，契約見 `obw/tools/typecheck-config.test.mjs`。
 
 變更後 `bun run --cwd obw check` 全數通過：lint、三層 typecheck、OMP 與 pi 的正式 loader 都只註冊一次 `/issue`，`bun test` 為 65 pass／0 fail。§3 到 §8 中「不使用 skipLibCheck」與「不升級 OMP」的敘述是當時的決定，保留作為歷史。

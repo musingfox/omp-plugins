@@ -2,7 +2,7 @@
 
 Project-scoped Obsidian tasks for pi and oh-my-pi (OMP). All vault I/O uses the `obsidian` CLI.
 
-**Status:** pi 1.1.0 has verified task browsing, persistent session binding, work-start recording, and explicit `/obw-sync`. OMP 18.13.3 has the same commands and card keys, checked by unit tests, fixtures on the official OMP loader, and a real OMP session with a fake provider. OMP records work start later than Pi (see below). No live OMP run against a vault or a model has been made, and cross-host acceptance is not complete. The checks now pin pi 1.4.0 and OMP 18.13.3; the pi acceptance runs were made on 1.1.0 and have not been repeated on 1.4.0. See the [implementation and acceptance record](docs/dual-host-plan.md).
+**Status:** pi 1.4.0 and OMP 18.13.3 each passed one live run of persistent session binding, work-start recording, and explicit `/obw-sync` against a real vault and model. Read-only `/issue` browsing was also run in a real terminal on both hosts. OMP records work start later than Pi (see below). Cross-host acceptance is not complete, and the card keys `b`/`u`/`y`/`n` have not been pressed in a real OMP terminal. See the [implementation and acceptance record](docs/dual-host-plan.md).
 
 ## Extension commands
 
