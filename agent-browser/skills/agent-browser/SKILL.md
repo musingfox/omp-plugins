@@ -3,7 +3,8 @@ name: agent-browser
 description: >-
   Use for live browser automation via the agent-browser CLI — open URLs, snapshot pages,
   click/fill/screenshot, inspect elements, scrape or read web pages. Ref-based workflow
-  for AI agents. Not for writing Playwright test files (use playwright or web-test).
+  for AI agents. Not for writing Playwright test files (use playwright or web-test),
+  nor for a visible browser the user watches or takes over (use zen-agent).
 ---
 
 # agent-browser
