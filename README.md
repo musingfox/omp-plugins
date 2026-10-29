@@ -21,6 +21,7 @@ omp plugin link --local /path/to/omp-plugins/agent-browser
 omp plugin link --local /path/to/omp-plugins/apple-podcasts
 omp plugin link --local /path/to/omp-plugins/hook-guard
 omp plugin link --local /path/to/omp-plugins/wizard
+omp plugin link --local /path/to/omp-plugins/audit
 omp plugin link --local /path/to/obsidian-skills   # after adding package.json with "omp": {}
 omp plugin list
 omp plugin doctor
@@ -44,6 +45,7 @@ Reload in-session: `/reload-plugins`.
 | **apple-podcasts** | — | Apple Podcasts episode audio URL resolution |
 | **hook-guard** | `/hook-guard` | Guided Git hook setup and commit checks |
 | **wizard** | — | Human-operated setup and credential wizards |
+| **audit** | — | Docs and milestone-test audits |
 | **obsidian** (kepano) | skills `obsidian-cli`, `obsidian-markdown`, `obsidian-bases`, `json-canvas`, `defuddle` | vault I/O syntax for `obw` |
 
 Markdown slash names are filenames; extensions may also register commands. Skill names are skill directory names. OMP does not namespace as `plugin:name`.

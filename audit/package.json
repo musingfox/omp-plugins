@@ -1,0 +1,9 @@
+{
+  "name": "audit",
+  "private": true,
+  "version": "0.1.4",
+  "description": "Repository audits that put each piece of knowledge where it cannot drift: docs sorted into code cache, rule or decision, and standing milestones traced to the tests that guard them",
+  "omp": {
+    "upstream": "b4555826"
+  }
+}
