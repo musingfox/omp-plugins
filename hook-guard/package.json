@@ -4,5 +4,7 @@
   "private": true,
   "type": "module",
   "description": "Safe commit test gate and guided hook setup for OMP",
-  "omp": {}
+  "omp": {
+    "upstream": "b4555826"
+  }
 }

@@ -1,14 +1,69 @@
-# Detection contract
+# Environment Detection Reference
 
-Collect facts before proposing Setup or Update:
+Run all phases and collect into a structured inventory.
 
-- VCS: `.git` and/or `.jj`; this guard supports commit confirmation for both,
-  but pre-commit hooks are a Git feature.
-- Languages and manifests: `package.json`, `pyproject.toml`, `Cargo.toml`,
-  `go.mod`, and workspace/monorepo markers.
-- Existing `.githooks`, `.git/hooks`, and `.claude/settings.local.json`.
-- Available tools only when the agent can observe them; never claim a tool is
-  installed from a manifest alone.
+## Language Detection
 
-If existing hooks are present, present merge, replace, or abort choices. Do not
-write, chmod, or change `core.hooksPath` before confirmation.
+Single Glob at project root:
+
+```
+{pyproject.toml,setup.py,setup.cfg,requirements.txt,Pipfile,package.json,tsconfig.json,Cargo.toml,go.mod,Gemfile,build.gradle,build.gradle.kts,pom.xml,Package.swift,CMakeLists.txt,Makefile}
+```
+
+| Marker | Language |
+|---|---|
+| `pyproject.toml`, `setup.py`, `setup.cfg`, `requirements.txt`, `Pipfile` | Python |
+| `package.json` (+ `tsconfig.json` ⇒ TypeScript) | JS / TS |
+| `Cargo.toml` | Rust |
+| `go.mod` | Go |
+| `Gemfile` | Ruby |
+| `build.gradle*`, `pom.xml` | Java / Kotlin |
+| `Package.swift` | Swift |
+| `CMakeLists.txt`, `Makefile` | C / C++ |
+
+Record all detected languages. Note `"type": "module"` in `package.json` (affects hook script import syntax).
+
+## Toolchain Detection
+
+Check via `command -v <tool>` (not `which`). Wrap in `set -euo pipefail`.
+
+**Python** — lint: `ruff` / `flake8` / `pylint`. Format: `ruff format` / `black` / `autopep8`. Test: `pytest` (or `unittest` built-in). If `pyproject.toml` present, configured tools (`[tool.*]`) take priority over merely-installed ones.
+
+**JS/TS** — check `package.json` devDependencies first, then `node_modules/.bin/<tool>`. Never fall back to `npx <tool>`: it can download the package during a scan that should be read-only. Lint: `eslint` / `biome`. Format: `prettier` / `biome`. Test: `vitest` / `jest` / `mocha` (also check `scripts.test`). Config files: `eslint.config.{js,mjs,cjs}`, `.eslintrc.*`, `.prettierrc*`, `biome.json{,c}`.
+
+**Rust** — `cargo clippy`, `rustfmt`, `cargo test` (built-in).
+
+**Go** — lint: `golangci-lint` / `staticcheck`. Format: `gofmt` (built-in) / `goimports`. Test: `go test` (built-in).
+
+**Syntax validation** — YAML needs `python3` with PyYAML (not in the standard library); TOML needs `python3` >= 3.11 (`tomllib`). macOS's bundled `/usr/bin/python3` (3.9) has neither, so the generated hook warns and skips those files instead of failing them.
+
+## VCS Detection
+
+```bash
+if [ -d ".jj" ] && [ -d ".git" ]; then echo "jj-colocated"
+elif [ -d ".jj" ]; then echo "jj-native"
+elif [ -d ".git" ]; then echo "git"
+else echo "no-vcs"; fi
+```
+
+`jj-native` cannot install pre-commit hooks — warn and abort.
+
+## Existing Hooks Inventory
+
+Report all findings before proceeding; never silently overwrite.
+
+```bash
+set -euo pipefail
+git config core.hooksPath 2>/dev/null && echo "FOUND: core.hooksPath"
+[ -f .git/hooks/pre-commit ] && echo "FOUND: .git/hooks/pre-commit"
+[ -d .githooks ] && echo "FOUND: .githooks/"
+[ -f .pre-commit-config.yaml ] && echo "FOUND: pre-commit framework"
+[ -d .husky ] && echo "FOUND: Husky"
+{ [ -f lefthook.yml ] || [ -f lefthook.yaml ]; } && echo "FOUND: Lefthook"
+```
+
+## Monorepo Detection
+
+Check: `package.json` → `workspaces`; `pnpm-workspace.yaml`; `Cargo.toml` → `[workspace].members`; or Glob `**/package.json`, `**/Cargo.toml`, `**/go.mod`, `**/pyproject.toml` — manifests at multiple depths ⇒ monorepo.
+
+If monorepo: list each package (path, language, tools). Hooks install at repo root; scope checks to staged files per package.

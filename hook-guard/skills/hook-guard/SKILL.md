@@ -1,59 +1,76 @@
 ---
 name: hook-guard
 description: >-
-  Safely set up, inspect, or update project hooks and pre-commit checks, while
-  requiring explicit confirmation before git or jj commits.
+  Set up, diagnose, or update a project's git pre-commit and commit-msg scripts, with
+  security checks and code-quality gates that run for every committer. Covers first-time installation, a "hook doctor" check on an existing setup,
+  and regenerating hooks after the project's tooling changes.
 ---
 
 # Hook Guard
 
-Dispatch by intent:
+Dispatch by user intent. Every question to the user goes through the OMP `ask` tool; write or change no file, mode bit, or `core.hooksPath` before the user confirms the exact action. Git hooks do not run for `jj commit`; say so when `.jj` is present.
 
-- **Setup**: first installation or “set up/configure hooks”.
-- **Doctor**: inspect an existing setup or troubleshoot it.
-- **Update**: refresh an installed setup after tooling changes.
+Plugin root is this skill's package directory; the `references/` paths below are relative to this skill.
 
-If ambiguous, use Doctor when `.githooks/pre-commit` exists; otherwise use Setup.
-Read all applicable references before proposing changes.
+Dispatch:
 
-## Safety contract
+- **Setup** — install is missing or user asks to set up / configure / initialize
+- **Doctor** — user asks to check / diagnose / verify / troubleshoot
+- **Update** — install exists and user asks to update / refresh / regenerate / sync
 
-The extension intentionally does not run commit-time tests: OMP has no verified
-synchronous tool-call execution API for safely running a repository's test
-command. Setup MUST create a real `.githooks/pre-commit` test gate instead.
-That hook runs the configured test command before `git commit`; passing allows
-the commit, failing exits non-zero and prints the captured output. `jj commit`
-does not invoke Git pre-commit hooks, so explain that limitation and use the
-project's verified jj-native hook mechanism only when the user supplies one.
+If ambiguous: if `.githooks/pre-commit` exists → default to Doctor; otherwise → Setup.
 
-The extension does not intercept arbitrary Bash and does not silently mutate
-files. Never claim that an automatic hook was installed unless the user
-confirmed the exact file edits and commands. Hook creation, settings changes,
-chmod, and format/lint commands are explicit agent actions requiring user
-confirmation.
+Read `references/settings.md` for the user-override schema (`.omp/hook-guard.local.md`) — applies to all three modes.
+
+---
 
 ## Setup
 
-1. Detect VCS, languages/tooling, existing `.githooks`, `.claude` settings, and
-   whether this is a monorepo. Read `references/detection.md`.
-2. Read optional `.claude/hook-guard.local.md` and summarize proposed checks.
-3. Present a plan covering pre-commit security/integrity checks, optional
-   lint/format/test checks, and commit-message checks. Ask for confirmation.
-4. After confirmation, show and apply each file edit and any `git config
-   core.hooksPath .githooks` command separately. If executable permissions are
-   needed, ask before an explicit chmod command; never imply it happened.
-5. Summarize touched files and tell the user to run Doctor.
+Skip if the user only wants to edit existing hooks. If `jj`-native only (no `.git/`), abort — pre-commit hooks not supported.
+
+1. **Detect** — follow `references/detection.md`. Collect: languages, toolchain, VCS, existing hooks, monorepo. If existing hooks found, ask merge / replace / abort.
+2. **Recommend** — read `.omp/hook-guard.local.md` if present. Present summary grouped by: pre-commit security / integrity / structure, pre-commit quality (lint / format / test), commit-msg. Ask to confirm.
+3. **Generate**:
+   - `.githooks/pre-commit` from `references/pre-commit-checks.md` — only enabled checks, real tool commands substituted. `chmod +x`.
+   - `.githooks/commit-msg` from `references/commit-msg.md` if enabled. `chmod +x`.
+   - Run `git config core.hooksPath .githooks`.
+   - Ensure `.omp/*.local.md` gitignored.
+4. **Verify** — `bash -n .githooks/pre-commit`, then in a scratch repo (`git init` in a temp dir, `core.hooksPath` pointing at the generated hooks) stage one clean file and one that trips a warning (e.g. trailing whitespace), and run the hook. Expect exit 0 with the warning printed. Any syntax error, unreplaced placeholder, or unexpected failure: return to Generate.
+5. **Summary** — files touched, onboarding cmd (`git config core.hooksPath .githooks`), mention Doctor / Update modes.
+
+---
 
 ## Doctor
 
-Report PASS/WARN/FAIL for every item in `references/pre-commit-checks.md`:
-configured hooks path, hook presence and executable bit, settings shape, tool
-availability, CLAUDECODE skip marker, override schema, and (only after asking)
-a dry-run. Remediation is guidance plus an explicit confirmed action, not an
-implicit write. End with `Result: N/M checks passed`.
+Run all checks, present a status table (✓ / ✗ / ⚠ / ℹ), then offer auto-fix for FAIL/WARN.
+
+1. **`git config core.hooksPath`** — must equal `.githooks`. Unset = FAIL. Other = WARN.
+2. **Hook files** — `.githooks/pre-commit` and (if conventional commits) `.githooks/commit-msg`: exist + executable.
+3. **Legacy agent skip** — installs from an older hook-guard skip lint / format / test when `CLAUDECODE` is set, so an agent's commits go unchecked. `grep -q 'CLAUDECODE' .githooks/pre-commit` = FAIL.
+4. **Tools** — grep pre-commit for tool names (ruff, eslint, prettier, gitleaks, jq, python3…); `command -v` each.
+5. **Settings file** — validate `.omp/hook-guard.local.md` frontmatter (schema in `references/settings.md`); warn on unknown fields.
+6. **(Optional) Dry-run** — offer to execute `.githooks/pre-commit` on current tree.
+
+Output ends with `Result: N/M checks passed`.
+
+Remediation:
+
+| Issue | Fix |
+|---|---|
+| core.hooksPath not set | `git config core.hooksPath .githooks` |
+| Hook not executable | `chmod +x .githooks/<file>` |
+| Tool missing | Suggest platform install |
+| Legacy agent skip | Delete the `SKIP_*` lines and their guards from pre-commit |
+
+---
 
 ## Update
 
-Verify the setup, re-detect tooling, and show a diff-style proposal. Preserve
-unrelated settings and user checks. Ask before changing any hook, settings,
-permission, or hooks-path configuration. Finish by recommending Doctor.
+1. **Verify install** — `.githooks/pre-commit` exists. Otherwise → Setup.
+2. **Re-detect** — `references/detection.md`; read overrides from `.omp/hook-guard.local.md`.
+3. **Diff** — parse existing pre-commit script; identify added / removed / changed tools or languages.
+4. **Present** — diff-style summary; ask to confirm.
+5. **Apply surgically**:
+   - `.githooks/pre-commit`: replace only changed check-function bodies (canonical in `references/pre-commit-checks.md`); insert/remove checks in correct section; preserve structure, config vars, helpers.
+   - Preserve user overrides throughout.
+6. **Post-update** — summarize; suggest running Doctor.
