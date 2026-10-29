@@ -4,9 +4,14 @@ The **generic** recipe for "render any markdown for a human, collect their
 feedback, write it back for an agent to read." Unlike `pr-review` (which hard-codes
 a code-review grammar), `feedback` makes **no assumption about the document**: the
 body is rendered read-only and kept verbatim, and only the human's feedback —
-`choice` (one selected option) and `notes` (free text) — round-trips through
+`choice` (the selected option/s) and `notes` (free text) — round-trips through
 frontmatter. Reach for this for decision briefs, approvals, "review this and tell
-me X" — anything that is a document plus a small structured response.
+me X" — anything that is a document plus a small structured response. One document
+can carry a single question or a whole **round** of independent ones (see below).
+
+## Contents
+
+Trigger · Markdown structure — single question · Round mode · Card view · Bidirectional flow · Round-trip preservation · Example · Relation to pr-review
 
 ## Trigger
 
@@ -15,7 +20,7 @@ Use when a human needs to read a rendered document and return a structured answe
 human to edit many fields inside a structured document, that is the rare case
 `pr-review` covers — not this recipe.
 
-## Markdown structure
+## Markdown structure — single question
 
 ```markdown
 ---
@@ -38,10 +43,10 @@ notes:
 
 - **Frontmatter required**, must contain `viz: feedback`.
 - **No comments in frontmatter** — the parser takes everything after the colon as
-  the value, so a trailing `# …` or `(…)` becomes part of it and an empty
-  `choice:` reads as already answered.
-- **`options:`** — optional, pipe-separated (full-width `｜` or ASCII `|`). Each becomes a
-  single-select card. Omit for a notes-only panel.
+  the value, so a trailing `# …` or `(…)` becomes part of it: an empty `choice:`
+  reads as already answered and `multi: true` turns false.
+- **`options:`** — optional, pipe-separated (full-width `｜` or ASCII `|`). Each
+  becomes a single-select card. Omit for a notes-only panel.
 - **`recommend:`** — optional; must match an option label exactly; shown as `建議`.
 - **`choice:` / `notes:`** — author leaves empty; the human fills them in-browser.
   **Save** writes them back here. `notes` newlines are stored as the literal `\n`
@@ -51,26 +56,106 @@ notes:
   `badge` 「回饋」, `notes_label` 「回饋 / 理由（選填）」, `prompt` a sensible line.
 - **Body** — rendered read-only and verbatim (markdown + mermaid); never rewritten.
 
+## Round mode — several independent decisions in one document
+
+A **dotted** frontmatter key (`q1.options`, `q1.choice`, …) declares a field of a
+per-question block. Any dotted key switches the recipe into round mode: the panel
+renders one block per question, in first-appearance order, and the top-level
+`options` / `recommend` / `choice` are ignored.
+
+```markdown
+---
+viz: feedback
+title: <header title>
+panel: <feedback-panel heading>
+prompt: <one-line instruction>
+q1.title: <question heading>
+q1.options: <A> | <B> | <C>
+q1.recommend: <one of q1's options>
+q1.multi: true
+q1.choice:
+q1.notes:
+q2.title: <question heading>
+q2.options: <A> | <B>
+q2.choice:
+notes:
+---
+```
+
+### Rules
+
+- **Question id** — anything without a dot or whitespace (`q1`, `storage`). Order in
+  the frontmatter is order on screen.
+- **No comments in frontmatter** — same as single-question mode; any text after
+  the colon is the value.
+- **Fields** — only `title`, `options`, `recommend`, `multi`, `choice`, `notes` are
+  recognised after the dot. Everything else stays an ordinary top-level key.
+  `options` (omit for a notes-only question), `recommend` (tagged 建議) and `multi`
+  are optional; `choice` and `notes` (this question's reasoning) are left empty.
+- **Top-level `notes:`** — round-level free text, still available alongside the
+  per-question notes.
+- **`<id>.multi: true`** — the option cards become checkboxes. Without it a question
+  is single-select: a click picks, a re-click keeps the pick, and the second click of
+  a double-click is ignored. A card answers to Enter, not Space, so Space still scrolls.
+- **`<id>.choice`** — always a *list* on disk, pipe-separated, empty when unanswered.
+  A single-select answer is simply a one-element list, so a reader parses both the
+  same way.
+- **Missing answer keys** are written back inside their own question block, so `q1`'s
+  answer never lands under `q2`'s title.
+- **Put every genuinely independent decision in one round**; a question whose answer
+  depends on another question in the same round belongs to the next round.
+
+## Card view — round mode only
+
+A round opens on **圖卡**, a read-only projection of the body; **原文** in the top
+bar switches to the verbatim markdown render and the choice is remembered per
+browser. Answers live outside both views, so switching never loses a pick or a
+note. The projection never writes: the body on disk stays byte-for-byte.
+
+The projection reads this structure (`project()` in `lib/recipes/feedback.model.js`):
+
+| Markdown | Card view |
+|---|---|
+| Everything before the first `##` | Hero |
+| `## <text>` equal to a question's `title` | That question's decision box, answered in place |
+| First table in it whose first-column cell equals an option label | One card per option, in `options` order |
+| Header matching 好處 / 優點 / pros, 代價 / 缺點 / cons | + and − lines, split on `；` |
+| Cell opening with 高 / 中高 / 中 / 中低 / 低 | Five-step meter; text after `：` is the reason |
+| Any other column | Labelled line on the card |
+| Blockquote in a decision | ★ verdict line |
+| `### <text>` equal to a card or tile title | That card's 詳情 drawer, taken out of the flow |
+| Other `##` sections: table of 2–4 columns | One tile per row, fields labelled by header |
+| Anything else | Rendered as ordinary markdown in place |
+
+If no `##` matches a question title the toggle is hidden and the page shows only
+原文. Covered by `viz/tests/feedback.project.test.js` against
+`tests/fixtures/feedback/cards.md`.
+
 ## Bidirectional flow
 
-1. Agent writes the markdown file (canonical source), `choice`/`notes` empty.
+1. Agent writes the markdown file (canonical source), the answer keys empty.
 2. `bash "${OMP_PLUGIN_ROOT}/lib/render.sh" <file.md> <name>` starts the server
    and opens the interactive page (http://, so Save works).
 3. Human reads the body, picks an option, writes notes.
-4. Human clicks **儲存回饋 (Save)** → `POST /api/save` writes `choice`/`notes`
-   back into the same `.md`; the body is untouched.
+4. Human clicks **Save** (labelled 儲存回饋) → `POST /api/save` writes `choice`/`notes`
+   back into the same `.md`; the body is untouched. A question with options but no
+   pick asks for confirmation first, the success toast lists what each question
+   saved, and a Save that did not land (conflict or failure) stays on screen until
+   the next one.
 5. Agent re-reads the `.md` and takes `choice:` and `notes:` as the human's
    answer. Empty `choice:` = not saved → fall back to a terminal answer.
 
-If opened via `file://` (no server) the Save button hides; **複製 (Export)** copies
+If opened via `file://` (no server) the Save button hides; **Export** (labelled 複製) copies
 the updated markdown to paste back instead.
 
 ## Round-trip preservation
 
 Body preserved byte-for-byte; frontmatter key order preserved. A no-op
 load→serialize is exact; setting feedback appends `choice`/`notes` once
-(idempotent) and leaves the body unchanged. Verified by
-`viz/tests/feedback.roundtrip.test.js`.
+(idempotent) and leaves the body unchanged. Round mode holds the same guarantees
+per question, and inserts a missing `<id>.choice` / `<id>.notes` inside its own
+block rather than at the end. Verified by `viz/tests/feedback.roundtrip.test.js`
+against `tests/fixtures/feedback/sample.md` and `round.md`.
 
 ## Example
 

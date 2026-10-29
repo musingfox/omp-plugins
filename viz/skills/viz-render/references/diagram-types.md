@@ -1,5 +1,11 @@
 # Mermaid Diagram Types Reference
 
+Viz draws every `mermaid` fence with Pele, which reads Mermaid syntax.
+
+## Contents
+
+1. Flowchart / Graph · 2. Architecture · 3. Sequence · 4. Class · 5. State · 6. ER · 7. Gantt · 8. Pie · Best Practices · Styling · Subgraphs
+
 ## 1. Flowchart / Graph
 
 **Use for**: Process flows, decision trees, algorithms, workflows
@@ -23,7 +29,47 @@ graph TD
 - `[[Subroutine]]` — predefined process
 - `[(Database)]` — data storage
 
-## 2. Sequence Diagram
+### Tangled graphs
+
+Pele lays out flowcharts without a layout directive. Past roughly 20 nodes,
+split the diagram, or group related nodes with `subgraph`:
+
+```mermaid
+graph LR
+    subgraph Backend
+        API --> DB[(Store)]
+    end
+    Web --> API
+```
+
+## 2. Architecture (`architecture-beta`)
+
+**Use for**: small service maps where group boundaries and brand identity carry
+the message — roughly ≤10 services and few edges.
+
+```mermaid
+architecture-beta
+    group edge[Edge]
+    group core[Core Platform]
+
+    service cdn(logos:aws-cloudfront)[CDN] in edge
+    service gw(logos:aws-api-gateway)[API Gateway] in edge
+    service ord(logos:aws-lambda)[Orders] in core
+
+    cdn:R -- L:gw
+    gw:B -- T:ord
+```
+
+- Ports are explicit: `a:R -- L:b` leaves `a`'s right side, enters `b`'s left.
+  Arrowheads use `-->` instead of `--`.
+- `service id(icon)[Label] in group` — the icon is optional. The viewer loads
+  the `logos:` pack ([icon list](https://icon-sets.iconify.design/logos/)) only
+  when a diagram uses it; without an icon a service renders as a plain empty box.
+- **Known weakness**: its layout engine routes edges diagonally across groups
+  and lets labels collide with edges. Keep the edge count low, or draw a
+  flowchart with `subgraph` instead.
+
+## 3. Sequence Diagram
 
 **Use for**: API interactions, system communications, time-based flows
 
@@ -39,7 +85,7 @@ sequenceDiagram
     B-->>A: Result
 ```
 
-## 3. Class Diagram
+## 4. Class Diagram
 
 **Use for**: Object-oriented design, data models, entity relationships
 
@@ -57,7 +103,7 @@ classDiagram
     Animal <|-- Dog
 ```
 
-## 4. State Diagram
+## 5. State Diagram
 
 **Use for**: State machines, workflow states, status transitions
 
@@ -71,7 +117,7 @@ stateDiagram-v2
     Error --> Idle: Retry
 ```
 
-## 5. Entity Relationship Diagram
+## 6. Entity Relationship Diagram
 
 **Use for**: Database schemas, data relationships
 
@@ -82,7 +128,7 @@ erDiagram
     PRODUCT ||--o{ LINE_ITEM : "ordered in"
 ```
 
-## 6. Gantt Chart
+## 7. Gantt Chart
 
 **Use for**: Project timelines, task scheduling
 
@@ -95,7 +141,7 @@ gantt
     Development      :a2, after a1, 45d
 ```
 
-## 7. Pie Chart
+## 8. Pie Chart
 
 **Use for**: Data distribution, proportions
 
@@ -110,13 +156,12 @@ pie title Distribution
 
 **DO**:
 - Use descriptive node labels (e.g., "User Authentication" not "Auth")
-- Keep diagrams focused: 5-15 nodes optimal
 - Use quotes for labels with spaces: `A["User Input"]`
 - Use subgraphs to organize complex flowcharts
 - Include meaningful arrow labels for decision branches
 
 **DON'T**:
-- Create overly complex diagrams (>20 nodes) — split into multiple
+- Create overly complex diagrams (>20 nodes) — split into multiple, or group with subgraphs
 - Use very long text in labels (>30 chars) — breaks layout
 - Use spaces in node IDs (use camelCase or underscores)
 - Mix diagram types in a single chart
