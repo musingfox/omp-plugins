@@ -1,0 +1,8 @@
+#!/bin/sh
+set -eu
+if [ -n "${OBW_COMMIT_MSG_ACTIVE:-}" ]; then
+  echo "commit-msg: recursive delegation refused" >&2
+  exit 1
+fi
+root=$(git rev-parse --show-toplevel)
+exec bun "$root/obw/tools/commit-msg.mjs" "$@"
