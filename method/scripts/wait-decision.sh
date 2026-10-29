@@ -1,0 +1,69 @@
+#!/usr/bin/env bash
+# Block until a method decision brief is written back by the in-browser Save,
+# then print the answer frontmatter and exit 0; exit 2 on timeout.
+#
+# The wake condition is "a Save happened", not "everything was answered": the
+# file's mtime changing is the one signal that works for both a single-question
+# brief (`choice:` / `notes:`) and a round brief (`d1.choice:` / `d1.notes:`),
+# and it still fires for a Save that picked nothing — a 都不對 with reasoning.
+# Deciding what an empty answer means belongs to the agent, not the waiter.
+#
+# Run this with OMP's bash tool as `async: true, timeout: 0` — when the job
+# exits, its result starts a new turn in the idle session. That makes the
+# human's browser Save the ONLY action needed to resume the turn: no
+# return-to-terminal keypress. `timeout: 0` because the tool's default 300s
+# deadline would kill the job long before this waiter's own timeout. To answer
+# in the terminal instead, the human types the answer and the agent writes it
+# into the brief, which ends this waiter like a Save.
+#
+# Usage: wait-decision.sh <brief.md> [timeout_sec]
+
+brief="${1:?usage: wait-decision.sh <brief.md> [timeout_sec]}"
+timeout="${2:-1800}"   # 30 min: long enough to deliberate, bounded so it can't zombie
+interval=2
+elapsed=0
+
+if [ ! -f "$brief" ]; then
+  echo "[method] wait-decision: brief not found: $brief" >&2
+  exit 1
+fi
+
+# GNU first: on GNU stat, `-f` means --file-system and would print a whole
+# filesystem block whose free-space figures drift on any disk write — two such
+# readings compare unequal and would be reported as a Save that never happened.
+# BSD stat rejects `-c` cleanly with no stdout, so the fallback is safe.
+mtime_of() {
+  stat -c %Y "$1" 2>/dev/null || stat -f %m "$1" 2>/dev/null
+}
+
+# Every answer line in the frontmatter block: `choice:` / `notes:` and the
+# per-question `<id>.choice:` / `<id>.notes:` of a round brief.
+answers() {
+  sed -n '2,/^---$/p' "$brief" | grep -E '^([A-Za-z0-9_-]+\.)?(choice|notes):'
+}
+
+# A Save can land before this waiter starts — between a timeout and the re-arm
+# the agent is told to do, or before a waiter relaunched after `/jobs kill` or a
+# resumed session. mtime alone cannot see one that already happened, so read the
+# brief's answer state first and return immediately if it is already answered.
+if answers | grep -qE ':[[:space:]]*[^[:space:]]'; then
+  answers
+  exit 0
+fi
+
+start="$(mtime_of "$brief")"
+
+while [ "$elapsed" -lt "$timeout" ]; do
+  now="$(mtime_of "$brief")"
+  if [ -n "$now" ] && [ "$now" != "$start" ]; then
+    answers || echo "[method] saved, but no choice/notes keys in the frontmatter"
+    exit 0
+  fi
+  sleep "$interval"
+  elapsed=$((elapsed + interval))
+done
+
+echo "[method] wait-decision: timeout after ${timeout}s — no Save detected. The page is still" >&2
+echo "[method] live and the brief is unchanged; re-arm this waiter on the same file, or take a" >&2
+echo "[method] typed answer in the terminal instead." >&2
+exit 2
