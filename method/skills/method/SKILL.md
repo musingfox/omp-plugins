@@ -11,8 +11,6 @@ A node's vehicle is an OMP session or a `task` subagent that session dispatched.
 
 The plugin root is the package directory two levels above this file (`<plugin root>/skills/method/SKILL.md`). Set `OMP_PLUGIN_ROOT` to that directory if it is unset; the other method files call it "the plugin root". Scripts live at `<plugin root>/scripts/` and agent definitions at `<plugin root>/agents/`. The method files beside this one are readable as `skill://method/<file>`.
 
-Not yet in this package: `scope-gate.sh`, `revert-gate.sh`, `add-repros.sh` and the browser decision page. Where a file sends you to one of them, skip that step and say in your report which step you skipped and why.
-
 Read a method file when its situation comes up, not up front.
 
 | Situation | Read |

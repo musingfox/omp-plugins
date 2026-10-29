@@ -14,14 +14,25 @@ Ported from cc-plugins `method` at `b4555826` (`package.json` `omp.upstream`).
 | `agents/method-probe.md` | Walks ONE candidate direction shallowly, only to find what it collides with. |
 | `agents/method-prototype.md` | Builds and runs ONE throwaway thing to answer a question reading could not, on a branch nobody merges. |
 | `scripts/check-contracts.sh` | Checks a `contracts.json` against the schema in `skills/method/contracts.md`. `check-contracts.sh FILE`; silent and exit 0 when clean, one line per violation and exit 1, exit 2 on unusable input. |
+| `scripts/scope-gate.sh` | Gate: the files the commits in `base..head` changed are a subset of the files the contracts declared. `scope-gate.sh --repo DIR --base REV --head REV --contracts FILE`. Prints `ALLOWLISTED <csv>` and/or `UNDECLARED <csv>`; exit 0 clean, 2 undeclared, 1 error. On a clean range it prints nothing and exits 0. |
+| `scripts/revert-gate.sh` | Gate: runs the test command once at `head` (the control run, which reports `test_exit=`, `test_counts=` and a bounded log tail), then once per contract with the implementation put back to `base`; each contract's tests must go red. `revert-gate.sh --repo DIR --base REV --head REV --contracts FILE --out DIR -- TEST_CMD [ARGS...]`. Last line is the verdict: `CLEAN <n>` (0), `STAYS_GREEN <A>[,<B>...]` (2), `TESTS_RED <n>` (3), `TESTS_STALLED <s>` (124), `ERROR <reason>` (1). Full log in `<out>/revert-gate.log`; `METHOD_TEST_DEADLINE_S` (default 1800) bounds each run. |
+| `scripts/add-repros.sh` | Appends a review's repros as test cases of the contracts they name. `add-repros.sh --contracts FILE REPROS_FILE`; prints `ADDED`/`DUPLICATE` lines, archives the old file beside it as `contracts-prev-<ts>.json`; exit 0, 2 usage, 3 malformed, 4 jq missing, 5 unknown contract. |
+
+A test suite that lives in a subdirectory goes through `bash -c`:
+
+```
+revert-gate.sh --repo . --base main --head HEAD --contracts contracts.json --out /tmp/gate \
+  -- bash -c 'cd obw && bun test'
+```
+
+TEST_CMD runs from the repository root of the gate's worktree, so a suite that runs from a subdirectory needs the `bash -c 'cd DIR && ...'` form.
+
+The gates share one input: a repo, a base and a head (any revs that resolve to commits in the repo) and a `contracts.json` (`schema_version` 1). Bad input or a missing `jq` is a single `ERROR <reason>` line and exit 1. A gate never changes the repo's checkout, index, branches, tags or stash; the revert gate runs in a detached worktree of its own under a temporary directory and removes it on every exit, signals included.
 
 ## Not yet ported
 
-These cc pieces are stubs here; the skill says to skip a step that needs one and name the skip in its report.
-
 - **The decision page** (`render-decision.sh`, `wait-decision.sh`, `decision-page.md`). Every round and the depth gate are asked inline with `ask`.
 - **Background wake-up** for a page left waiting on the human. Not needed while rounds are inline.
-- **The gates**: `scope-gate.sh`, `revert-gate.sh`, `add-repros.sh` and their tests.
 
 ## How it maps onto OMP
 
@@ -37,5 +48,8 @@ These cc pieces are stubs here; the skill says to skip a step that needs one and
 ## Requirements
 
 - `bash`
-- `jq`
 - `git`
+- `jq`
+- `perl` (the revert gate's run supervisor)
+- `python3` (`add-repros.sh`)
+- `shasum`
