@@ -23,6 +23,7 @@ omp plugin link --local /path/to/omp-plugins/hook-guard
 omp plugin link --local /path/to/omp-plugins/wizard
 omp plugin link --local /path/to/omp-plugins/zen-agent
 omp plugin link --local /path/to/omp-plugins/audit
+omp plugin link --local /path/to/omp-plugins/method
 omp plugin link --local /path/to/obsidian-skills   # after adding package.json with "omp": {}
 omp plugin list
 omp plugin doctor
@@ -48,6 +49,7 @@ Reload in-session: `/reload-plugins`.
 | **wizard** | — | Human-operated setup and credential wizards |
 | **zen-agent** | — | Visible second Zen browser the user can watch and take over |
 | **audit** | — | Docs and milestone-test audits |
+| **method** | — | Narrow a question into a contract, then deliver it as one node of a contract tree |
 | **obsidian** (kepano) | skills `obsidian-cli`, `obsidian-markdown`, `obsidian-bases`, `json-canvas`, `defuddle` | vault I/O syntax for `obw` |
 
 Markdown slash names are filenames; extensions may also register commands. Skill names are skill directory names. OMP does not namespace as `plugin:name`.
