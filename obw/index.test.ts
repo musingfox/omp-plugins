@@ -20,6 +20,7 @@ test("issue command reads dashboard then default All Tasks query", async () => {
       },
       registerCommand: (_name: string, options: { handler: (args: string, ctx: unknown) => Promise<void> }) => { handler = options.handler; },
       registerTool: () => {},
+      on: () => {},
     };
     extension(omp as never);
     await handler?.("", { cwd: root, mode: "tui", ui: { notify() {}, custom: async (factory: (tui: { requestRender(): void }, theme: undefined, keys: { matches(): boolean }, done: () => void) => { dispose(): void }) => {
@@ -64,6 +65,7 @@ test("pm tools register once each as essential write tools and answer in one JSO
       exec: async (_command: string, args: string[]) => { calls.push(args); return { code: 0, killed: false, stderr: "", stdout: '=> OBW_WRITEBACK:{"body":null}' }; },
       registerCommand: () => {},
       registerTool: (tool: Tool) => { tools.push(tool); },
+      on: () => {},
     };
     extension(omp as never);
     expect(tools.map((tool) => [tool.name, tool.approval, tool.loadMode])).toEqual([["pm_tick", "write", "essential"], ["pm_note", "write", "essential"], ["pm_status", "write", "essential"]]);

@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { realpathSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { pathToFileURL } from "node:url";
+import { assertOmpWritebackRegistration } from "./omp-registration.mjs";
 import { assertPiWritebackRegistration } from "./pi-registration.mjs";
 
 const { host, packageDir, entries, cwd, agentDir } = JSON.parse(process.argv[2]);
@@ -19,5 +20,5 @@ assert.deepEqual(result.extensions.map((extension) => realpathSync(extension.res
 const issueRegistrations = result.extensions.filter((extension) => extension.commands.has("issue"));
 assert.equal(issueRegistrations.length, 1, "Exactly one /issue registration is required");
 if (host.id === "pi") assertPiWritebackRegistration(result.extensions[0]);
-if (host.id === "omp") assert.deepEqual([...result.extensions[0].tools.keys()].sort(), ["pm_note", "pm_status", "pm_tick"], "OMP must register the three pm tools once each");
-console.log(`[check:load:${host.id}] PASS: ${result.extensions.length} manifest extension(s), /issue registered once${host.id === "omp" ? ", pm tools registered" : ""}; no commands/events invoked, no model or vault calls`);
+if (host.id === "omp") assertOmpWritebackRegistration(result.extensions[0]);
+console.log(`[check:load:${host.id}] PASS: ${result.extensions.length} manifest extension(s), /issue registered once${host.id === "omp" ? ", binding commands, observers and pm tools registered" : ""}; no commands/events invoked, no model or vault calls`);
