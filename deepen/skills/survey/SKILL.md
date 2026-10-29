@@ -8,7 +8,7 @@ description: >-
 
 # Survey
 
-Survey adapted from [mattpocock/skills](https://github.com/mattpocock/skills) `improve-codebase-architecture` (MIT, Copyright (c) 2026 Matt Pocock), commit 3cca18b368ae95cdbdebbff572ccafa662551015. The upstream HTML report and grilling steps are not imported: viz renders Markdown/Mermaid, and `/spiral` narrows a candidate.
+Survey adapted from [mattpocock/skills](https://github.com/mattpocock/skills) `improve-codebase-architecture` (MIT, Copyright (c) 2026 Matt Pocock), commit 3cca18b368ae95cdbdebbff572ccafa662551015. The upstream HTML report and grilling steps are not imported: viz renders Markdown/Mermaid, and the main session narrows a candidate.
 
 Plugin root is this skill's package directory. Set `OMP_PLUGIN_ROOT` to that directory if it is unset before resolving package resources.
 
@@ -58,4 +58,4 @@ The script uses sibling viz when available and otherwise prints the report inlin
 
 ## 7. Hand-off
 
-Use `ask` to ask: “Which of these would you like to explore?” Narrowing a chosen candidate is `/spiral`'s job; this skill ends at the report.
+Use `ask` to ask: “Which of these would you like to explore?” Narrowing a chosen candidate is the main session's job; this skill ends at the report.

@@ -39,7 +39,7 @@ seams, not to add a second flagship.
 > just drift. Revisit only when a real second feedback shape appears.
 > `kanban-board` remains an unbuilt sketch.
 
-> **Update (2026-09-09).** That revisit trigger fired: spiral needs to put a
+> **Update (2026-09-09).** That revisit trigger fired: a decision-round workflow needs to put a
 > whole **round** of independent decisions to a human at once, each with its own
 > candidates, and to let several candidates be carried forward together. It
 > landed as **frontmatter on `feedback`**, not a new recipe — a *dotted* key

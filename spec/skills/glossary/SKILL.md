@@ -23,7 +23,7 @@ not earlier, and not under `docs/spec/`. Specs live there; the glossary does not
 A term belongs here when it names a thing in the problem domain. Write what it IS.
 CONTEXT.md is a glossary and nothing else.
 
-The words layer, port, adapter, seam, module, and interface stay out of CONTEXT.md. Domain words keep their own meaning; those six are design terms. The mirror rule is context-flow's Design Vocabulary — it need not list every one of them.
+The words layer, port, adapter, seam, module, and interface stay out of CONTEXT.md. Domain words keep their own meaning; those six are design terms. The mirror rule is the Design Vocabulary in deepen/agents/explorer.md — it need not list every one of them.
 
 ## Clean architecture
 

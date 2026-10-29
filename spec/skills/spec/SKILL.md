@@ -49,7 +49,7 @@ heading of every slice, so make it readable:
 id: judge-seats-cannot-edit
 status: accepted            # proposed | accepted | superseded
 scope:                      # file globs, never module names
-  - "pi-dispatch/agents/reviewer.md"
+  - "agents/reviewer.md"
 verify: check:<shell command that exits 0 when the spec holds>
 related: [other-spec-id]    # entries this one bears on
 source: null                # where it came from — milestone slug, or null
