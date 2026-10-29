@@ -26,7 +26,7 @@ Narrowing moves questions from opinion into right/wrong. A **retrievable fact** 
 
 The **decision-maker** owns the picks and the navigation: which direction, when a layer is settled, when to dig a layer deeper, when to go back up. You never pick a direction for them and never start a layer on your own say-so. Dropping a candidate a probe proved wrong is not a pick: right/wrong was never theirs to vote on.
 
-At the top, the decision-maker is the human: you ask inline with `ask`, one question per decision, every decision of the round in one call. Below the top, it is your author: a round is a `BLOCKED` report, kind decision, each one-way door under Options (`report.md`). Your author answers it by `route.md`, and only a door beyond its authority climbs further.
+At the top, the decision-maker is the human: a round goes on the browser page (`decision-page.md`), and when the page is unavailable you ask inline with `ask`, one question per decision, every decision of the round in one call. Below the top, it is your author: a round is a `BLOCKED` report, kind decision, each one-way door under Options (`report.md`). Your author answers it by `route.md`, and only a door beyond its authority climbs further.
 
 ### Asking with `ask`
 
@@ -53,11 +53,11 @@ It returns the decisions this layer can settle now, each tagged one-way or two-w
 
 ## 2. The round
 
-Put every one-way door from that list in front of the decision-maker at once. At the top that is one `ask` call ("Asking with `ask`" above); write the round's questions to `.narrow/L<N>-a<M>-directions.md` first and its answers beside them after. Below the top it is a `BLOCKED` report, as above. Give each two-way door a default instead. One surviving decision is a one-question round; a padded round is worse than a short one.
+Put every one-way door from that list in front of the decision-maker at once. At the top that is the browser page: write the round as a brief in the `viz: feedback` shape in `.narrow/L<N>-a<M>-directions.md`, render it with `render-decision.sh`, hand the human the `URL:` line, wait with `wait-decision.sh` in the background, and read the answers back from the file. The brief format, the body layout and the read-back rules are in `decision-page.md`. When the render ends `save-mode=inline`, make it one `ask` call instead ("Asking with `ask`" above) and write its answers beside the questions in that file. Below the top it is a `BLOCKED` report, as above. Give each two-way door a default instead. One surviving decision is a one-question round; a padded round is worse than a short one.
 
 For each decision: the question in plain language, each candidate's substance inline (what it is, what taking it commits to, how costly it is to undo), and your recommendation with its reason. The recommendation is yours, never Divergence's. Facts Divergence resolved go in as facts. Where the candidates cannot be told apart from their descriptions, invite the decision-maker to keep several alive, and say that keeping several means "go walk them".
 
-Read the answers back from the `ask` result:
+Read the answers back from the file, or from the `ask` result:
 
 - **Every decision answered** → step 3. Answers that make new decisions askable do not extend this round; they go to the next layer.
 - **Some answered, some blank** → the picks stay settled, the blanks stay open. A blank is not agreement with your recommendation. Round `a+1`, back to step 1 carrying what was settled.
@@ -95,7 +95,7 @@ The first and last stand alone: they become acceptance criteria a later reader c
 
 ## 5. The depth gate
 
-Ask the decision-maker one question: enough, or dig another layer. At the top, ask it with `ask` the way step 2 does: one question, option 0 "Leave open", no `recommended`; a blank or timed-out answer is not "enough". Offer "go back up and retake that decision" only when this layer showed the result above it rests on a false claim, or the frame itself is stuck. Record the answer and its reasoning verbatim on the front of the result.
+Ask the decision-maker one question: enough, or dig another layer. At the top, put it on the page the way step 2 does (`decision-page.md` "The depth gate on the page"): a one-decision brief in the `viz: feedback` shape, rendered with `render-decision.sh`, the `URL:` line handed to the human, `wait-decision.sh` waiting in the background, the answer read back from the file. On `save-mode=inline` ask it with `ask`: one question, option 0 "Leave open", no `recommended`. A blank or timed-out answer is not "enough". Offer "go back up and retake that decision" only when this layer showed the result above it rests on a false claim, or the frame itself is stuck. Record the answer and its reasoning verbatim on the front of the result.
 
 - **Dig another layer** → `L+1`, round `a1`, step 1, widening from this result and carrying the feedback.
 - **Go back up** → `L-1`, reopened, carrying what this layer found.

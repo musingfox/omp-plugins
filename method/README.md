@@ -16,6 +16,7 @@ Ported from cc-plugins `method` at `b4555826` (`package.json` `omp.upstream`).
 | `scripts/check-contracts.sh` | Checks a `contracts.json` against the schema in `skills/method/contracts.md`. `check-contracts.sh FILE`; silent and exit 0 when clean, one line per violation and exit 1, exit 2 on unusable input. |
 | `scripts/scope-gate.sh` | Gate: the files the commits in `base..head` changed are a subset of the files the contracts declared. `scope-gate.sh --repo DIR --base REV --head REV --contracts FILE`. Prints `ALLOWLISTED <csv>` and/or `UNDECLARED <csv>`; exit 0 clean, 2 undeclared, 1 error. On a clean range it prints nothing and exits 0. |
 | `scripts/revert-gate.sh` | Gate: runs the test command once at `head` (the control run, which reports `test_exit=`, `test_counts=` and a bounded log tail), then once per contract with the implementation put back to `base`; each contract's tests must go red. `revert-gate.sh --repo DIR --base REV --head REV --contracts FILE --out DIR -- TEST_CMD [ARGS...]`. Last line is the verdict: `CLEAN <n>` (0), `STAYS_GREEN <A>[,<B>...]` (2), `TESTS_RED <n>` (3), `TESTS_STALLED <s>` (124), `ERROR <reason>` (1). Full log in `<out>/revert-gate.log`; `METHOD_TEST_DEADLINE_S` (default 1800) bounds each run. |
+| `scripts/render-decision.sh`, `scripts/wait-decision.sh` | The decision page: render a round brief to the browser through the sibling `viz` package, then block until the human's Save. `render-decision.sh BRIEF [NAME]` ends with `[method] save-mode=browser\|inline`; `wait-decision.sh BRIEF [TIMEOUT_SEC]` prints the answers and exits 0, or exits 2 on timeout. |
 | `scripts/add-repros.sh` | Appends a review's repros as test cases of the contracts they name. `add-repros.sh --contracts FILE REPROS_FILE`; prints `ADDED`/`DUPLICATE` lines, archives the old file beside it as `contracts-prev-<ts>.json`; exit 0, 2 usage, 3 malformed, 4 jq missing, 5 unknown contract. |
 
 A test suite that lives in a subdirectory goes through `bash -c`:
@@ -29,16 +30,12 @@ TEST_CMD runs from the repository root of the gate's worktree, so a suite that r
 
 The gates share one input: a repo, a base and a head (any revs that resolve to commits in the repo) and a `contracts.json` (`schema_version` 1). Bad input or a missing `jq` is a single `ERROR <reason>` line and exit 1. A gate never changes the repo's checkout, index, branches, tags or stash; the revert gate runs in a detached worktree of its own under a temporary directory and removes it on every exit, signals included.
 
-## Not yet ported
-
-- **The decision page** (`render-decision.sh`, `wait-decision.sh`, `decision-page.md`). Every round and the depth gate are asked inline with `ask`.
-- **Background wake-up** for a page left waiting on the human. Not needed while rounds are inline.
-
 ## How it maps onto OMP
 
 - Agent seats are dispatched with `task` and `agent: method-<seat>`. OMP has no `plugin:` namespace and keeps the first agent of a name it loads, so the seats carry a `method-` prefix.
 - Seats set `thinkingLevel:`, not `effort:`, which OMP does not read. They pin no `model:`; pin the reviewer at or above the builder with `task.agentModelOverrides`.
 - Sub-nodes are `task` subagents that build on their own branch and worktree; nested splits recurse through `task`, up to `task.maxRecursionDepth`.
+- The decision page's waiter runs as a background job: the `bash` tool with `async: true` and `timeout: 0`. When it exits, OMP starts a new turn in the idle session with its result, so the human's Save alone resumes the node. Two limits: after the human interrupts a turn, a finished job's result joins the context without starting one; and print mode (`-p`) exits and cancels its jobs unless `async.printWake` is on.
 - `ask` never gets a `recommended` index: with `ask.timeout` set, silence would auto-pick it. `skills/method/narrow.md` "Asking with `ask`" gives the rule.
 
 ## Tests
@@ -53,3 +50,4 @@ The gates share one input: a repo, a base and a head (any revs that resolve to c
 - `perl` (the revert gate's run supervisor)
 - `python3` (`add-repros.sh`)
 - `shasum`
+- The `viz` package, linked beside `method` (the decision page; without it a round falls back to `ask`)
