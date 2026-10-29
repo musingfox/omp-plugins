@@ -204,7 +204,7 @@ Live fixture 與正常模型測試只寫批准的 task／runs；所有 vault I/O
 
 ### OMP 驗收（2026-10-29）
 
-使用者批准後，在正式 OMP 18.13.3、真 Obsidian CLI 與 `@smol` 模型上跑了一次，程式是 `overhaul` 的 `c1b9b03`。OMP 用隔離的 agent 目錄，session 檔沒有寫進使用者的 `~/.omp/agent/sessions`。Session 是 `01a186cd-852d-73c6-b0a2-c054bd00aed2`。
+使用者批准後，在正式 OMP 18.13.3、真 Obsidian CLI 與 `@smol` 模型上跑了一次，程式是 `01bb35c` 的版本。OMP 用隔離的 agent 目錄，session 檔沒有寫進使用者的 `~/.omp/agent/sessions`。Session 是 `01a186cd-852d-73c6-b0a2-c054bd00aed2`。
 
 - 第一則回覆寫入前執行 `/obw-bind`，被拒絕，原因是還沒有 session 檔；vault 不變。
 - 回覆後 `/obw-bind` 跳出「Replace task binding?」對話框，指出原 owner 是 Pi session `01a13569-ffaa-7115-a3f8-22e398c55825`。這是 OMP 的 `ctx.ui.confirm` 選單，`y` 鍵無效，要選 Yes 後按 Enter。卡片只有 `session` 改變。
