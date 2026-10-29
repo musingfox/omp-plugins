@@ -2,9 +2,12 @@
   "name": "viz",
   "private": true,
   "version": "1.1.0",
-  "omp": {},
+  "omp": {
+    "upstream": "b4555826"
+  },
   "scripts": {
-    "test": "bun test"
+    "test": "bun test",
+    "e2e": "bun tests/feedback.e2e.ts && bun tests/diagrams.e2e.ts"
   },
   "devDependencies": {
     "marked": "11.1.1"
