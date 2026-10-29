@@ -7,7 +7,7 @@ import { createWritebackController, type WritebackStartContext } from "./writeba
 
 export default function extension(pi: ExtensionAPI): void {
 	const exec = pi.exec.bind(pi);
-	const bindings = createBindingController(exec);
+	const bindings = createBindingController(exec, "pi");
 	const writebacks = createWritebackController(exec);
 	let epoch = 0;
 	let uiRevision = 0;

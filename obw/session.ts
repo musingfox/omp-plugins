@@ -94,7 +94,7 @@ function bindCode(cardPath: string, sessionId: string, previous: string | undefi
  return 'OBW_BIND:' + JSON.stringify({body: await app.vault.read(f)});
 })()`;
 }
-export function createBindingController(exec: IssueExec) {
+export function createBindingController(exec: IssueExec, host: Binding["host"]) {
 	let revision = 0;
 	let queue = Promise.resolve();
 	return {
@@ -122,7 +122,7 @@ export function createBindingController(exec: IssueExec) {
 				const receipt = output.trim().match(/^(?:=>\s*)?OBW_BIND:(\{.*\})$/s);
 				const readback = receipt ? asRecord(JSON.parse(receipt[1])) : undefined;
 				if (typeof readback?.body !== "string" || cardSession(readback.body) !== sessionId) throw new Error("Bind readback failed; no session binding recorded");
-				context.append({ host: "pi", sessionId, ...config, cardPath });
+				context.append({ host, sessionId, ...config, cardPath });
 			});
 			queue = work.catch(() => {});
 			return work;

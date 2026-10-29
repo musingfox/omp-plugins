@@ -33,6 +33,7 @@ async function fixture() {
 	const calls = [];
 	const mutations = [];
 	const receipts = [];
+	const bindings = [];
 	const notices = [];
 	const statuses = [];
 	let waitCalls = 0;
@@ -75,6 +76,7 @@ async function fixture() {
 	const appendEntry = (customType, data) => {
 		entries.push({ type: "custom", id: `custom-${entries.length}`, customType, data });
 		if (customType === "obw-writeback") receipts.push(data);
+		if (customType === "obw-binding") bindings.push(data);
 		persist();
 	};
 	// Official SDK loads the actual adapter and supplies its registration API.
@@ -107,8 +109,8 @@ async function fixture() {
 		return event;
 	};
 	return {
-		base, command, files, calls, mutations, receipts, notices, statuses,
-		emit, run: (name) => extension.commands.get(name).handler("", command),
+		base, command, files, calls, mutations, receipts, bindings, notices, statuses,
+		emit, run: (name, argument = "") => extension.commands.get(name).handler(argument, command),
 		push: (message, save = true) => { entries.push(message); if (save) persist(); },
 		setFile: (value) => { sessionFile = value; }, setIdle: (value) => { idle = value; }, setPending: (value) => { pending = value; },
 		setWait: (callback) => { wait = callback; }, beforeExec: (callback) => { beforeExec = callback; }, onWrite: (callback) => { afterWrite = callback; },
@@ -145,6 +147,12 @@ await check("context observes latest persistent queued user without modifying me
 	f.push({ type: "message", id: "failed-attempt", message: { role: "assistant", stopReason: "error", errorMessage: "retry", content: [] } });
 	await f.emit("context", { messages });
 	assert.equal(f.files.get(cardPath), bytes); assert.equal(f.mutations.length, writes); assert.equal(f.receipts.length, 1);
+});
+await check("obw-bind records host pi with the card session readback", async (f) => {
+	f.files.set(cardPath, original.replace("session: s1", "session: "));
+	await f.run("obw-bind", cardPath);
+	assert.match(f.notices.at(-1).message, /^Bound this session/);
+	assert.deepEqual(f.bindings, [binding]); assert.match(f.files.get(cardPath), /\nsession: s1\n/);
 });
 await check("no-session and memory-only start fail before vault I/O", async (f) => {
 	f.setFile(undefined); await f.emit("context", { messages: [] }); await f.run("obw-sync");

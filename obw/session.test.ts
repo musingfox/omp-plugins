@@ -39,7 +39,7 @@ function fixture(owner: string | undefined = undefined) {
 }
 
 test("bind reads task, writes via CLI eval, verifies body, then appends active-branch binding", async () => {
-	const f = fixture(); const controller = createBindingController(f.exec);
+	const f = fixture(); const controller = createBindingController(f.exec, "pi");
 	await controller.bind(config, path, f.context);
 	expect(f.calls.map((call) => call[1])).toEqual(["read", "eval"]);
 	expect(f.calls[0]).toEqual(["vault=V", "read", `path=${path}`]);
@@ -51,7 +51,7 @@ test("bind reads task, writes via CLI eval, verifies body, then appends active-b
 	expect(f.calls).toHaveLength(2);
 });
 test("unpersisted sessions and non-task paths refuse before vault I/O", async () => {
-	const f = fixture(); const c = createBindingController(f.exec);
+	const f = fixture(); const c = createBindingController(f.exec, "pi");
 	f.setPersisted(false);
 	await expect(c.bind(config, path, f.context)).rejects.toThrow("persisted");
 	f.setPersisted(true);
@@ -59,7 +59,7 @@ test("unpersisted sessions and non-task paths refuse before vault I/O", async ()
 	expect(f.calls).toHaveLength(0);
 });
 test("foreign session needs actual approval, declined replacement never writes", async () => {
-	const f = fixture("other"); const c = createBindingController(f.exec);
+	const f = fixture("other"); const c = createBindingController(f.exec, "pi");
 	await expect(c.bind(config, path, f.context)).rejects.toThrow();
 	expect(f.calls.map((call) => call[1])).toEqual(["read"]);
 	f.approve(); await c.bind(config, path, f.context);
@@ -68,7 +68,7 @@ test("foreign session needs actual approval, declined replacement never writes",
 test("readback mismatch and CLI failure never persist success", async () => {
 	for (const stdout of ['=> OBW_BIND:{"body":"---\\nsession: wrong\\n---\\n"}', "Error: failed"]) {
 		const f = fixture();
-		const c = createBindingController(async (command, args) => args[1] === "eval" ? { code: 0, killed: false, stdout, stderr: "" } : f.exec(command, args));
+		const c = createBindingController(async (command, args) => args[1] === "eval" ? { code: 0, killed: false, stdout, stderr: "" } : f.exec(command, args), "pi");
 		await expect(c.bind(config, path, f.context)).rejects.toThrow();
 		expect(getBinding(f.context.branch(), "s1")).toBeUndefined();
 	}
@@ -80,7 +80,7 @@ test("Unbind, session/branch switch and replacement Bind invalidate an in-flight
 		let entered: (() => void) | undefined;
 		const readEntered = new Promise<void>((resolve) => { entered = resolve; });
 		let first = true;
-		const c = createBindingController(async (command, args) => { if (first) { first = false; entered?.(); await gate; } return f.exec(command, args); });
+		const c = createBindingController(async (command, args) => { if (first) { first = false; entered?.(); await gate; } return f.exec(command, args); }, "pi");
 		const old = c.bind(config, path, f.context).then(() => "unexpected success", (error: unknown) => error instanceof Error ? error.message : String(error));
 		await readEntered;
 		let newer: Promise<void> | undefined;
@@ -95,7 +95,7 @@ test("Unbind, session/branch switch and replacement Bind invalidate an in-flight
 test("owner changing after approval is caught inside atomic frontmatter callback", async () => {
   const f = fixture("other");
   f.context.confirm = async () => { f.fm.session = "third-session"; return true; };
-  const c = createBindingController(f.exec);
+  const c = createBindingController(f.exec, "pi");
   await expect(c.bind(config, path, f.context)).rejects.toThrow("conflict");
   expect(f.fm.session).toBe("third-session");
   expect(getBinding(f.context.branch(), "s1")).toBeUndefined();
@@ -106,7 +106,7 @@ test("session replacement after eval cannot append a binding success", async () 
     const result = await f.exec(command, args);
     if (args[1] === "eval") f.switchSession();
     return result;
-  });
+  }, "pi");
   await expect(c.bind(config, path, f.context)).rejects.toThrow("invalidated");
   expect(getBinding(f.context.branch(), "s2")).toBeUndefined();
 });
