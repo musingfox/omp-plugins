@@ -52,7 +52,7 @@ grep -qF 'Print the hand-off only once the commit exists.' <<<"$handoff" || fail
 grep -qF 'Branch: diagnose/<slug>' <<<"$handoff" || fail 'branch handoff field missing'
 grep -qF 'Test: <sha>' <<<"$handoff" || fail 'test handoff field missing'
 grep -qF 'Cause: <confirmed cause>' <<<"$handoff" || fail 'cause handoff field missing'
-grep -qF '/cf Cherry-pick <sha> from diagnose/<slug>' <<<"$handoff" || fail 'repair handoff missing'
+grep -qF 'Cherry-pick <sha> from diagnose/<slug>' <<<"$handoff" || fail 'repair handoff missing'
 grep -qF 'Patch: .diagnose/<slug>.patch' <<<"$handoff" || fail 'patch handoff field missing'
 
 

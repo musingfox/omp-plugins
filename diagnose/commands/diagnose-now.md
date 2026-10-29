@@ -1,5 +1,5 @@
 ---
-description: "Start diagnosis immediately; leave one failing regression test and hand off to /cf"
+description: "Start diagnosis immediately; leave one failing regression test and hand off to the main session"
 ---
 
 # Diagnose now
