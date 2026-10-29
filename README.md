@@ -4,6 +4,8 @@ Native [oh-my-pi](https://github.com/can1357/oh-my-pi) plugins. Skills/commands 
 
 Each plugin is an OMP package: `package.json` with `"omp": {}`, plus conventional `commands/` and `skills/`. There is no marketplace catalog and no `.claude-plugin/` layout.
 
+`obw` also has a Pi extension for task browsing, persistent binding, work-start recording, and explicit reply sync. Its OMP skills are not Pi prompts; OMP writeback and full cross-host acceptance remain incomplete. See [OBW host support and acceptance](obw/README.md).
+
 Claude Code ports live in [cc-plugins](https://github.com/musingfox/cc-plugins).
 
 ## Install
@@ -37,7 +39,7 @@ Reload in-session: `/reload-plugins`.
 |------|----------------|-------------|
 | **cf** | `/cf <goal>` | research → plan → High-only `ask` → worktree shards → review |
 | **viz** | `/viz-inline`, `/viz-render` | chat shapes and browser HTML |
-| **obw** | `/obw-init`, `/obw-jot`, `/obw-pm` | Obsidian vault productivity |
+| **obw** | `/issue`; Pi: `/obw-bind`, `/obw-unbind`, `/obw-sync`; OMP skills: `/obw-init`, `/obw-jot`, `/obw-pm` | Obsidian tasks; Pi-first writeback, OMP browsing/skills |
 | **spec** | — | Architecture contracts and domain glossary |
 | **diagnose** | `/diagnose-now` | Evidence-only bug diagnosis and `/cf` handoff |
 | **deepen** | — | Architecture survey from user scope or git hotspots |
@@ -50,7 +52,7 @@ Reload in-session: `/reload-plugins`.
 | **wizard** | — | Human-operated setup and credential wizards |
 | **obsidian** (kepano) | skills `obsidian-cli`, `obsidian-markdown`, `obsidian-bases`, `json-canvas`, `defuddle` | vault I/O syntax for `obw` |
 
-Slash names are markdown filenames; skill names are skill directory names. OMP does not namespace as `plugin:name`.
+Markdown slash names are filenames; extensions may also register commands. Skill names are skill directory names. OMP does not namespace as `plugin:name`.
 
 ## Develop locally
 

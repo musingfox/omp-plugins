@@ -1,3 +1,5 @@
 .DS_Store
 *.pyc
 __pycache__/
+obw/node_modules/
+obw/.checks/

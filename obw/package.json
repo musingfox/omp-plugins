@@ -3,7 +3,46 @@
   "private": true,
   "version": "0.9.0",
   "type": "module",
+  "scripts": {
+    "lint": "bun tools/run.mjs lint",
+    "typecheck": "bun tools/run.mjs typecheck",
+    "typecheck:tools": "bun tools/run.mjs typecheck:tools",
+    "typecheck:omp": "bun tools/run.mjs typecheck omp",
+    "typecheck:pi": "bun tools/run.mjs typecheck pi",
+    "typecheck:core": "bun tools/run.mjs typecheck core",
+    "check:load": "bun tools/run.mjs check:load",
+    "check:load:omp": "bun tools/run.mjs check:load omp",
+    "check:load:pi": "bun tools/run.mjs check:load pi",
+    "test": "bun tools/run.mjs test",
+    "check": "bun tools/run.mjs check"
+  },
   "omp": {
     "extensions": ["./index.ts"]
+  },
+  "pi": {
+    "extensions": ["./pi.ts"],
+    "skills": [],
+    "prompts": []
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": "*",
+    "@earendil-works/pi-tui": "*",
+    "@oh-my-pi/pi-tui": "*"
+  },
+  "peerDependenciesMeta": {
+    "@earendil-works/pi-coding-agent": { "optional": true },
+    "@earendil-works/pi-tui": { "optional": true },
+    "@oh-my-pi/pi-tui": { "optional": true }
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.5.15",
+    "@types/bun": "1.4.3",
+    "@types/node": "22.19.19",
+    "@types/node-bun": "npm:@types/node@26.6.5",
+    "typescript": "5.9.3"
+  },
+  "dependencies": {
+    "mdast-util-from-markdown": "2.1.0",
+    "yaml": "2.9.1"
   }
 }

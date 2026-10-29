@@ -1,18 +1,37 @@
 import { expect, test } from "bun:test";
-import extension, { applyIssueCards, createIssueComponent, initialIssueState, isSafeCardPath, nextIssueRequest, renderMermaidFallback } from "./index";
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import extension, { applyIssueCards, createIssueComponent, initialIssueState, isSafeCardPath, nextIssueRequest, renderMermaidFallback, type IssueState } from "./index";
 
 test("issue command reads dashboard then default All Tasks query", async () => {
-  const calls: string[][] = [];
-  let handler: ((args: string, ctx: unknown) => Promise<void>) | undefined;
-  const pi = { exec: async (_command: string, args: string[]) => { calls.push(args); if (args[0] === "vault=V") return args[1] === "read" ? "    name: All Tasks\n" : JSON.stringify([]); return "vault: V\npm:\n  project: P\n"; }, registerCommand: (_name: string, options: { handler: (args: string, ctx: unknown) => Promise<void> }) => { handler = options.handler; } };
-  extension(pi as never);
-  await handler!("", { hasUI: false, ui: { notify() {} } });
-  expect(calls[1]).toEqual(["vault=V", "read", "path=pm/P/dashboard.base"]);
-  expect(calls[2]).toEqual(["vault=V", "base:query", "path=pm/P/dashboard.base", "view=All Tasks", "format=json"]);
+  const root = await mkdtemp(join(tmpdir(), "obw-omp-test-"));
+  try {
+    await writeFile(join(root, ".obsidian.yaml"), "vault: V\npm:\n  project: P\n");
+    const calls: string[][] = [];
+    let handler: ((args: string, ctx: unknown) => Promise<void>) | undefined;
+    let queried: (() => void) | undefined;
+    const query = new Promise<void>((resolve) => { queried = resolve; });
+    const omp = {
+      exec: async (_command: string, args: string[]) => {
+        calls.push(args);
+        if (args[1] === "base:query") queried?.();
+        return { code: 0, killed: false, stderr: "", stdout: args[1] === "read" ? "views:\n - name: All Tasks\n" : "[]" };
+      },
+      registerCommand: (_name: string, options: { handler: (args: string, ctx: unknown) => Promise<void> }) => { handler = options.handler; },
+    };
+    extension(omp as never);
+    await handler?.("", { cwd: root, mode: "tui", ui: { notify() {}, custom: async (factory: (tui: { requestRender(): void }, theme: undefined, keys: { matches(): boolean }, done: () => void) => { dispose(): void }) => {
+      const component = factory({ requestRender() {} }, undefined, { matches: () => false }, () => {});
+      await query; component.dispose();
+    } } });
+    expect(calls[0]).toEqual(["vault=V", "read", "path=pm/P/dashboard.base"]);
+    expect(calls[1]).toEqual(["vault=V", "base:query", "path=pm/P/dashboard.base", "view=All Tasks", "format=json"]);
+  } finally { await rm(root, { recursive: true, force: true }); }
 });
 
 test("navigation groups All Tasks and toggles done heading", () => {
-  let state = { ...initialIssueState(), mode: "cards" as const, view: "All Tasks", cards: [{ title: "A", status: "todo", priority: "high" }, { title: "B", status: "done" }] };
+  let state: IssueState = { ...initialIssueState(), mode: "cards", view: "All Tasks", cards: [{ title: "A", status: "todo", priority: "high" }, { title: "B", status: "done" }] };
   const component = createIssueComponent(state, (next) => { state = next; });
   expect(component.render().join("\n")).toContain("▸ done (1)");
   component.handleInput("enter");

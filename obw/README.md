@@ -1,10 +1,29 @@
 # Obsidian Workspace
 
-Project-scoped Obsidian vault productivity for oh-my-pi — quick capture, long-form notes, and project management. It owns folder layout, file templates, and PM conventions; all vault I/O runs the Obsidian CLI in the main context, deferring to the `obsidian` skill for syntax.
+Project-scoped Obsidian tasks for pi and oh-my-pi (OMP). All vault I/O uses the `obsidian` CLI.
 
-Slash commands: `/obw-init`, `/obw-jot`, `/obw-pm`.
+**Pi-first status:** pi 1.1.0 has verified task browsing, persistent session binding, work-start recording, and explicit `/obw-sync`. OMP retains browsing and its existing skills; OMP binding/writeback and cross-host acceptance are not complete. The checks now pin pi 1.4.0 and OMP 18.13.3; the pi acceptance runs were made on 1.1.0 and have not been repeated on 1.4.0. See the [implementation and acceptance record](docs/dual-host-plan.md).
 
-## Skills
+## Extension commands
+
+| Command | Pi | OMP |
+|---------|----|-----|
+| `/issue [view]` | Browse the configured project's dashboard; defaults to All Tasks | Browse only |
+| `/obw-bind <task path>` | Bind the persisted session to a vault-relative project task | Not implemented |
+| `/obw-unbind` | Remove the active-branch binding without changing the vault | Not implemented |
+| `/obw-sync` | Append the current completed reply snapshot and verify readback | Not implemented |
+
+`/issue` requires TUI mode. Left/Backspace returns to the previous page; Escape/q exits. Pi card keys are `b` to Bind and `u` to Unbind. A foreign-owner replacement requires explicit confirmation: `y` approves; `n`, Enter, or Back declines; Exit cancels the pending approval. The project comes from `.obsidian.yaml`; there is no project picker.
+
+Pi restores binding from the active session branch. The card's `session` property records its owner; Unbind does not clear that property or historical Agent records. During a normal model request, the `context` observer records work start after the real user message is persisted. Failures before that boundary are not covered. It does not automatically write results or change task status.
+
+`/obw-sync` uses the latest completed assistant reply after the current user message. Errors, aborts, tool calls, empty replies, unpersisted sources, and historical fallback are refused. It appends the first nonempty line under `## Agent`; multiline text also goes to `pm/{project}/runs/{card}.md` with a card link. Repeating the same source ID does not duplicate records. A changed session, branch, input, or binding invalidates a pending request. Partial writes can remain; a verified receipt requires matching readback.
+
+Print/JSON reports use stderr; RPC/TUI reports use notifications. `/issue` reports its mode restriction rather than opening a custom UI outside TUI.
+
+## OMP skills
+
+The Pi manifest exposes only the extension. It does not load these OMP skills or markdown commands.
 
 | Skill | Purpose |
 |-------|---------|
@@ -12,7 +31,7 @@ Slash commands: `/obw-init`, `/obw-jot`, `/obw-pm`.
 | `/obw-jot <text>` | Quick capture (timestamped bullet to today's daily note) or long-form note |
 | `/obw-pm [intent]` | Task / document / ADR lifecycle, relations, warranted ADRs, and previewed ticket publishing |
 
-## How It Works
+## OMP skill conventions
 
 - **Vault I/O** goes through the `obsidian` CLI in the main context (no `task` spawn). This plugin does not duplicate CLI syntax; it defers to the `obsidian` skill.
 - **Daily notes** use Obsidian's **Daily Notes** core plugin (folder / filename / template). Quick capture calls `daily:append`.
@@ -21,14 +40,24 @@ Slash commands: `/obw-init`, `/obw-jot`, `/obw-pm`.
 
 ## Prerequisites
 
-- kepano's [obsidian-skills](https://github.com/kepano/obsidian-skills) linked as an OMP package (`package.json` with `"omp": {}` + `omp plugin link --local`)
-- [Obsidian](https://obsidian.md) app running (headless CLI also works)
-- Obsidian community plugin **`obsidian-cli`** installed and enabled. The plugin's name is `obsidian-cli` but the executable it installs is `obsidian` (invoked as `obsidian vault=<name> ...`). This is **not** the unrelated standalone `obsidian-cli` binary by Yakitrak.
+- [Obsidian](https://obsidian.md) app running, with a working `obsidian` executable on PATH. See the [Obsidian CLI documentation](https://help.obsidian.md/cli). This is not the unrelated standalone `obsidian-cli` binary by Yakitrak.
+- For OMP skills, kepano's [obsidian-skills](https://github.com/kepano/obsidian-skills) linked as an OMP package (`package.json` with `"omp": {}` + `omp plugin link --local`).
 - **Templates** core plugin enabled (required for `/obw-pm` — `task` / `doc` / `adr` templates)
 - **Daily Notes** core plugin enabled (required for `/obw-jot` quick capture)
 - **Bases** core plugin enabled (required only for `/obw-pm` dashboards — bundled in Obsidian 1.9+)
 
 ## Installation
+
+For a temporary Pi load, run these commands from this repository's root after installing official Pi:
+
+```bash
+bun install --cwd obw --frozen-lockfile --omit peer --ignore-scripts
+pi --extension ./obw/pi.ts
+```
+
+Peer dependencies are omitted to avoid installing another host runtime. This invocation does not change persistent Pi settings. Configure `.obsidian.yaml` yourself; Pi does not expose `/obw-init`.
+
+OMP package loading:
 
 ```bash
 omp plugin link --local /path/to/omp-plugins/obw
@@ -39,7 +68,7 @@ Vault operations use `obsidian`, `jq`, `cp`, and `sed`. Approve those tools when
 
 ## Configuration
 
-Run `/obw-init` in a project root. The generated `.obsidian.yaml`:
+In OMP, run `/obw-init` in a project root. In Pi, create `.obsidian.yaml` with the same format:
 
 ```yaml
 vault: MyVault
@@ -56,14 +85,15 @@ Daily note folder / filename / template are **not** in `.obsidian.yaml` — they
 
 ## Vault Layout (`/obw-pm`)
 
-```
+```text
 pm/
 ├── dashboard.base        # Cross-project dashboard (optional, Bases)
 └── {project}/
     ├── dashboard.base    # Project dashboard
     ├── tasks/            # Active tasks
     │   └── archive/      # Completed tasks
-    └── docs/             # Docs + ADRs
+    ├── docs/             # Docs + ADRs
+    └── runs/             # Pi multiline reply snapshots, created on demand
 ```
 
 `/obw-init` creates this skeleton. Re-running it offers safe pre-0.9 migration: archive moves use the Obsidian CLI, missing titles are optionally backfilled, and stale dashboards are regenerated only after confirmation. Existing filenames and hand-edited templates are preserved.
@@ -78,9 +108,23 @@ Dashboards and searches depend on these frontmatter fields. If you edit the inst
 
 New notes use kebab-case filenames while `title` retains the human-readable name. ADR creation requires all three warrant conditions: hard to reverse, confusing without context, and a real trade-off; failures redirect to a doc or spec.
 
-## Examples
+## Checks
 
+From the repository root:
+
+```bash
+bun run --cwd obw typecheck:pi
+bun run --cwd obw typecheck:core
+bun run --cwd obw typecheck:tools
+bun run --cwd obw check:load
+bun run --cwd obw test
 ```
+
+Pi/core source checks are strict; the tools check uses checkJs. These commands cover different layers, not a full-package success claim. The OMP typecheck sets `skipLibCheck`, because OMP's published declaration graph does not type-check on its own; OBW's own use of the OMP API stays strict. `bun run --cwd obw check` runs in the repo-local pre-commit hook; do not bypass it. The [acceptance record](docs/dual-host-plan.md#8-pi-驗收紀錄) distinguishes unit/fixture, headless, model, and live-browser evidence.
+
+## OMP skill examples
+
+```text
 /obw-jot #worklog 完成 API 重構 PR，等 review
 /obw-jot API Redesign Proposal --folder Architecture --tag design
 /obw-pm add task implement-auth, high priority, due 2026-05-01
