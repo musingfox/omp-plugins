@@ -2,7 +2,7 @@
 
 本規劃在既有 `obw` package 中新增 pi 支援，保留 OMP 使用方式。第一版提供任務瀏覽、session 綁定與明確同步；任務管理資料仍以 Obsidian vault 為準。
 
-使用者已批准 pi／OMP 都以 `/obw-sync` 同步呼叫時的已完成回覆快照，不要求自動最終結果回寫。使用者也已批准 repo-local hooks 與專用測試 project。OMP 的正式型別問題尚未解決；使用者已批准先實作 pi。Pi 的 source gate、持久化 fixture 與真實 CLI 同步、正常模型 lifecycle、真 PTY 導航與綁定確認均已通過獨立 review。OMP 目前只保留瀏覽入口，binding／writeback adapter、跨宿主 A10 與 aggregate check 尚未完成。完成範圍與驗收 checkpoint 見 §8；驗收紀錄製作時，實作仍是未提交的 workspace 變更，不是調查基準 commit 的既有功能；後續 Git 狀態以實際 HEAD 與工作目錄為準。
+使用者已批准 pi／OMP 都以 `/obw-sync` 同步呼叫時的已完成回覆快照，不要求自動最終結果回寫。使用者也已批准 repo-local hooks 與專用測試 project。OMP 的正式型別問題尚未解決；使用者已批准先實作 pi。Pi 的 source gate、持久化 fixture 與真實 CLI 同步、正常模型 lifecycle、真 PTY 導航與綁定確認均已通過獨立 review。OMP adapter 已在 2026-10-29 實作 binding、開始記錄與 `/obw-sync`。OMP 的開始記錄依使用者決定改用 `message_end`，可能晚於 model request 開始（§3.4、§9）；這些只有單元、官方 loader fixture 與假 provider 的真實 session 收據，沒有真實 OMP／Obsidian 驗收；跨宿主 A10 尚未完成，見 §8 與 §9。完成範圍與驗收 checkpoint 見 §8；驗收紀錄製作時，實作仍是未提交的 workspace 變更，不是調查基準 commit 的既有功能；後續 Git 狀態以實際 HEAD 與工作目錄為準。
 
 ## 1. 基準與來源
 
@@ -67,7 +67,7 @@ Bind 先讀回確認卡片存在。若卡片 `session` 指向另一個 session�
 
 輸入是已確認的 binding 與明確的同步請求。輸出是附有讀回結果的成功收據，或可見的失敗。回寫不影響 task 的 status、priority、relations 或 archive 位置。
 
-綁定 session 開始工作時記錄時間與「工作中」，automatic continuation 不重複記錄同一輪開始。明確同步時記錄回覆第一個非空行；多行全文附加到 `pm/{project}/runs/{card}.md`，卡片附全文連結。保留使用者正文；Agent 記錄只能附加，不能重寫 Notes 或 Acceptance Criteria。
+綁定 session 開始工作時記錄時間與「工作中」，automatic continuation 不重複記錄同一輪開始。OMP 的記錄時點依 §9 的使用者決定，是該輪 user message 的寫入排入佇列之後，可能晚於 model request 開始，見 §3.4。明確同步時記錄回覆第一個非空行；多行全文附加到 `pm/{project}/runs/{card}.md`，卡片附全文連結。保留使用者正文；Agent 記錄只能附加，不能重寫 Notes 或 Acceptance Criteria。
 
 開始記錄與回覆快照必須有可持久化的去重識別，使用真實 session message entry ID，不只用回覆文字或時間作 key。重複同步、reload 與同一訊息的恢復通知不得重複附加。單一 session 的回寫採序列執行；partial-write 的去重狀態須能由 vault 讀回查明。
 
@@ -84,6 +84,17 @@ Pi 有 `agent_settled`，但 OMP 17.3.4 沒有等價的 extension 穩定結果�
 使用者已批准 `/obw-sync` 快照契約。Pi command 使用真正的 `waitForIdle()`，等待放在共用 mutation queue 外；否則 run 等待 context 的開始記錄時會互相等待。進入 queue 後若又變 busy，拒絕而不再等待。這只是明確同步的前置檢查，不宣稱是完整穩定邊界，實作見 `obw/writeback.ts:140–159`。快照必須是 active branch 本輪最新 assistant message，且 stopReason 為 stop、沒有 errorMessage、toolCall，並包含非空文字。沒有合格的本輪回覆時拒絕同步，不回退挑選歷史成功答案。
 
 Pi 的 `context` observer 使用本輪真 user entry ID 記錄開始，不修改 model messages；同 ID 的 retry／tool continuation 採去重。開始記錄前驗證該 user 已在磁碟；Sync 則驗證捕捉的 user／assistant 都已持久化，不以任何舊訊息存在代替來源證明。實作見 `obw/pi.ts:33–53`、`obw/session.ts` 的 `hasPersistedSource`。
+
+OMP 18.13.3 的 adapter 在 `obw/index.ts`，與 Pi 共用同一份核心，binding 的 host 寫為 `omp`（`obw/session.ts:125`）。下列 OMP 差異已依原始碼確認，adapter 對每項都採 fail closed：
+
+- OMP 在一輪的第一次 provider request 前觸發 `context` 時，該輪的 user message 還沒寫入 session。Agent loop 先把 prompt 留在 `turnMessages`（`pi-agent-core/src/agent-loop.ts:1350–1351`），經 `syncContextBeforeModelCall`（`:1366`）與 `prepareProviderCall` → `transformContext`（`:1395`、`:1957`）觸發 `context`；直到 `:1447–1451` 才以 `emitInputMessages` 送出該 prompt 的 `message_end`，而這是寫入它的唯一觸發（`src/session/agent-session.ts:4561–4563` → `4008–4020`）。所以 OMP 沒有「user 已寫入且 request 尚未開始」的 hook；`before_provider_request`（`src/sdk.ts:4474–4476`）不帶 messages，且只在 provider 呼叫 `onPayload` 時觸發。
+- 因此 OMP 改由 extension 的 `message_end` 記錄開始，這是 §9 的使用者決定。Session 先把 user 的寫入排入佇列（`agent-session.ts:4561–4563`），之後才通知 extension（`:3850–3859`、`:4615`），但沒有等寫入完成。Handler 只處理非 steering、非 synthetic 的 user message（`obw/index.ts:74`），在 branch 上以 timestamp 找到該 entry 後才記錄。最多等 2 秒（`obw/index.ts:16,78–83`），找不到時警告並不寫 vault。等待前先記下失效計數，等待中若 session、branch、input 或 binding 變更，就拒絕記錄（`obw/index.ts:75,85`），與 `/obw-bind` 的做法相同（`obw/index.ts:104`）；核心只在呼叫當下取自己的 revision，看不到等待中的變更。之後仍由核心驗證它是 branch 最新的 user、已在磁碟、binding 與 branch 未變，並以同 ID 去重。Agent loop 不等這個 handler，所以記錄可能晚於 model request 開始。真實 session 測試中拿掉這段等待，文字回合就記錄不到開始，可見 handler 執行時寫入確實常常尚未完成。
+- OMP 不再註冊 `context` observer（`obw/tools/omp-registration.mjs` 禁止它），一輪不會記錄兩次，一般回合也不再出現舊的拒絕警告。
+- OMP 的 auto-continue prompt 是 `synthetic: true` 的 developer message，不是 user message（`src/session/agent-session.ts:5478–5487`），handler 只看 user message，所以它不記錄開始。
+- OMP 對 extension handler 設 30 秒上限（`src/extensibility/extensions/runner.ts:133`）。逾時後 handler 的 vault 寫入仍會繼續並讀回驗證，但 OMP 不再等它。Pi 沒有此上限的證據。
+- Pi 的 `session_before_fork` 在 OMP 沒有同名事件。OMP 以 `session_before_switch`／`session_switch`、`session_before_branch`／`session_branch`、`session_before_tree`／`session_tree` 表示切換、分支與 tree 導航（`src/extensibility/shared-events.ts:35–75,137–157`）。Adapter 在 before 事件與 `session_shutdown` 使請求失效，在 `session_start` 與三個完成事件使請求失效並還原 binding（`obw/index.ts:91–99`）。
+- OMP 的 `hasUI` 只在沒有 UI context 時為 false（`src/extensibility/extensions/runner.ts:1027–1029`）。一般 RPC 會設定 RPC UI context（`src/modes/rpc/rpc-mode.ts:1706`），`/obw-bind` 的替換批准會送到 RPC client，與 Pi 相同。`--no-ui` 與 print／JSON 模式不設 UI context（`src/modes/print-mode.ts:174–185`），這時遇到另一 session 的卡片直接拒絕。
+- 新 session 在第一個 assistant message 前不寫檔（`src/session/session-manager.ts:1858–1865`）。Pi 的同一限制見 `obw/session.ts:34` 的註解與 `obw/session.ts:113` 的錯誤訊息，本次沒有重讀 Pi 原始碼；在此之前 Bind、開始記錄與 Sync 都因缺持久化證據而拒絕。
 
 同步前後重驗 session ID、active branch、binding 與快照識別。等待期間的新輸入、branch／session 切換、Unbind 或重新綁定會使舊請求失效。已開始的 I/O 不宣稱可撤回，但不能繼續用失效 binding 寫下一份資料。
 
@@ -193,11 +204,19 @@ Live fixture 與正常模型測試只寫批准的 task／runs；所有 vault I/O
 
 ### 尚未證明的範圍
 
-OMP writeback 與跨宿主 A10 未完成；OMP／aggregate typecheck 尚未通過。Pi 的 A2、延遲請求／session invalidation、tool continuation 去重、error／abort 拒絕、partial-write recovery 等細節有 unit／fixture 契約，沒有把每個故障都注入真實 vault。正式 core 測試來源見 `obw/contracts.test.ts`、`obw/issue.test.ts`、`obw/session.test.ts`、`obw/writeback.test.ts`。
+OMP 的 binding、開始記錄與 Sync 已實作（§9），但只有單元與 fixture 收據，下列各項都沒有在真實 OMP 上觀測：
+
+- OMP 的開始記錄改在 `message_end`（§3.4、§9）。真實 `createAgentSession` 加假 provider 的測試顯示：文字回合與 tool call 回合各記錄一次，重送同一個 `message_end` 不重複。這仍是假 provider 與假 vault；真實 model、真實 Obsidian 與 2 秒等待在一般負載下是否足夠，都沒有觀測。
+- 30 秒 handler 上限下，開始記錄與 model request 的實際先後。
+- 真 PTY 的 `/issue` 導航與 `b`／`u`／`y`／`n` 確認；fixture 只呼叫 component 的 `handleInput`。
+- 真實 OMP session 檔的持久化證明。Fixture 使用 OMP 自己的 title slot serializer 與一個真實 `SessionManager` 案例，其餘案例使用手寫 JSONL。
+- 跨宿主 A10。
+
+Pi 的 A2、延遲請求／session invalidation、tool continuation 去重、error／abort 拒絕、partial-write recovery 等細節有 unit／fixture 契約，沒有把每個故障都注入真實 vault。正式 core 測試來源見 `obw/contracts.test.ts`、`obw/issue.test.ts`、`obw/session.test.ts`、`obw/writeback.test.ts`。
 
 正常模型驗收只直接觀測開始收據早於 assistant-start，沒有直接觀測 HTTP request boundary。使用者批准 SDK 必需的既有 OAuth 自動續期，但驗收沒有直接觀測 refresh；auth／settings／models 的 metadata 未變不等於證明其內容不變。Pre-context failure 不在工作開始覆蓋範圍內。Pi 的 no-model PTY warning 是刻意隔離 auth 的預期結果，不算另一輪模型驗收。
 
-後續應先解決正式 OMP declaration 阻擋，再適配 OMP binding／work-start／Sync，最後取得 A10 的真實跨宿主收據。現有 hook 繼續 fail closed，不以 Pi 驗收解除它。
+後續須取得 OMP 的真實 vault 驗收，再取得 A10 的真實跨宿主收據。不以 Pi 驗收或 OMP fixture 代替這兩項。
 
 ## 9. 2026-10-29 決定變更
 
@@ -207,3 +226,11 @@ OMP writeback 與跨宿主 A10 未完成；OMP／aggregate typecheck 尚未通�
 - OMP typecheck 改用 `skipLibCheck`，只限 omp 目標。18.13.3 的 published declaration graph 有 48 個自身錯誤：@huggingface/tokenizers 42 個、@huggingface/transformers 2 個、OMP 自己的套件 4 個；OBW 原始碼沒有錯誤。Pi、core 與 tools 的檢查仍不使用 skipLibCheck。設定見 `obw/tools/typecheck-config.mjs`，契約見 `obw/tools/typecheck-config.test.mjs`。
 
 變更後 `bun run --cwd obw check` 全數通過：lint、三層 typecheck、OMP 與 pi 的正式 loader 都只註冊一次 `/issue`，`bun test` 為 65 pass／0 fail。§3 到 §8 中「不使用 skipLibCheck」與「不升級 OMP」的敘述是當時的決定，保留作為歷史。
+
+同日的 M10 為 OMP 加上與 Pi 相同的 `/obw-bind`、`/obw-unbind`、`/obw-sync` 與卡片 `b`／`u`，與 Pi 共用核心；差異見 §3.4。
+
+- 核心唯一的變更是 `createBindingController` 改為由入口傳入 host（`obw/session.ts:97,125`），OMP 寫 `omp`，Pi 寫 `pi`。
+- `obw/tools/check-load.mjs` 啟動的 `obw/tools/load-worker.mjs:23` 在 OMP 上改用 `obw/tools/omp-registration.mjs`。它要求四個 command 與三個 pm tool 各註冊一次、十個 observer 各一個，並禁止 `agent_end`、`session_stop` 等自動結果事件。此斷言先對舊 `index.ts` 失敗，實作後通過。
+- `obw/tools/omp-adapter-worker.mjs` 在 Bun 上用正式 OMP loader 載入 `index.ts`，只替換 vault exec 與 session entry 寫入，共 35 個情境。它們涵蓋持久化 session 要求、持久化 user 後的開始記錄、Sync 拒絕、同 ID 去重，以及 session、branch、input 與 binding 變更造成的失效，包括在等待 user entry 期間發生的九種事件與重新 bind。repo 只保存這些測試本身；開發時對每組做過的刻意破壞沒有留下紀錄檔。這些 fixture 自行送出 `message_end`，看不出 OMP 的實際事件順序；那由下一項的真實 session 測試涵蓋。
+- 審查時用真實 `createAgentSession` 加假 provider 發現：舊的 `context` observer 在一輪第一次 `context` 時找不到該輪 user，文字回合從不記錄開始。使用者在 2026-10-29 選擇改用 extension 的 `message_end`，接受記錄可能晚於 model request 開始。這只改 OMP 的時點，Pi 不變。§3 的其餘保證不變：需要已持久化的 session、只記錄 branch 最新且已在磁碟的 user、同 ID 去重、失效與 fail closed。其中失效也涵蓋等待 user entry 的那 2 秒，這是複審後補上的 epoch 檢查（`obw/index.ts:75,85`）。`obw/tools/omp-session-worker.mjs` 是這個情境的測試：它對 bdfd1dc 的 `index.ts` 失敗，對新的 `message_end` handler 通過；它只重播 user 的 `message_end`，核心去重壞掉時會轉紅。
+- 變更後 `bun run --cwd obw check` 通過，`bun test` 為 80 pass／0 fail。這些都是 fixture 與假 provider 收據；OMP 尚未做真實 vault 驗收，見 §8。

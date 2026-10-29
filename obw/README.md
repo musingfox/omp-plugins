@@ -2,20 +2,22 @@
 
 Project-scoped Obsidian tasks for pi and oh-my-pi (OMP). All vault I/O uses the `obsidian` CLI.
 
-**Pi-first status:** pi 1.1.0 has verified task browsing, persistent session binding, work-start recording, and explicit `/obw-sync`. OMP retains browsing and its existing skills; OMP binding/writeback and cross-host acceptance are not complete. The checks now pin pi 1.4.0 and OMP 18.13.3; the pi acceptance runs were made on 1.1.0 and have not been repeated on 1.4.0. See the [implementation and acceptance record](docs/dual-host-plan.md).
+**Status:** pi 1.1.0 has verified task browsing, persistent session binding, work-start recording, and explicit `/obw-sync`. OMP 18.13.3 has the same commands and card keys, checked by unit tests, fixtures on the official OMP loader, and a real OMP session with a fake provider. OMP records work start later than Pi (see below). No live OMP run against a vault or a model has been made, and cross-host acceptance is not complete. The checks now pin pi 1.4.0 and OMP 18.13.3; the pi acceptance runs were made on 1.1.0 and have not been repeated on 1.4.0. See the [implementation and acceptance record](docs/dual-host-plan.md).
 
 ## Extension commands
 
 | Command | Pi | OMP |
 |---------|----|-----|
-| `/issue [view]` | Browse the configured project's dashboard; defaults to All Tasks | Browse only |
-| `/obw-bind <task path>` | Bind the persisted session to a vault-relative project task | Not implemented |
-| `/obw-unbind` | Remove the active-branch binding without changing the vault | Not implemented |
-| `/obw-sync` | Append the current completed reply snapshot and verify readback | Not implemented |
+| `/issue [view]` | Browse the configured project's dashboard; defaults to All Tasks | Same as Pi |
+| `/obw-bind <task path>` | Bind the persisted session to a vault-relative project task | Same as Pi |
+| `/obw-unbind` | Remove the active-branch binding without changing the vault | Same as Pi |
+| `/obw-sync` | Append the current completed reply snapshot and verify readback | Same as Pi |
 
-`/issue` requires TUI mode. Left/Backspace returns to the previous page; Escape/q exits. Pi card keys are `b` to Bind and `u` to Unbind. A foreign-owner replacement requires explicit confirmation: `y` approves; `n`, Enter, or Back declines; Exit cancels the pending approval. The project comes from `.obsidian.yaml`; there is no project picker.
+`/issue` requires TUI mode. Left/Backspace returns to the previous page; Escape/q exits. Card keys on both hosts are `b` to Bind and `u` to Unbind. A foreign-owner replacement requires explicit confirmation: `y` approves; `n`, Enter, or Back declines; Exit cancels the pending approval. The project comes from `.obsidian.yaml`; there is no project picker.
 
-Pi restores binding from the active session branch. The card's `session` property records its owner; Unbind does not clear that property or historical Agent records. During a normal model request, the `context` observer records work start after the real user message is persisted. Failures before that boundary are not covered. It does not automatically write results or change task status.
+Both hosts restore binding from the active session branch. A new session has no session file until its first reply, so it cannot bind before then. The card's `session` property records its owner; Unbind does not clear that property or historical Agent records. On Pi, during a normal model request, the `context` observer records work start after the real user message is persisted. Failures before that boundary are not covered. Neither host automatically writes results or changes task status.
+
+On OMP 18.13.3, work start is recorded from the user message's `message_end` event. OMP fires `context` before it persists the turn's user message, and it has no awaited hook between persisting that message and starting the model request. The handler waits up to 2 seconds for the user entry to reach the session branch, then records it once; if the entry never appears, it warns and writes nothing, and a session, branch, input, or binding change during that wait refuses the record. OMP does not wait for this handler, so the record can land after the model request has started. Steering messages (user messages marked `steering`) and auto-continue prompts (developer messages) do not record a start.
 
 `/obw-sync` uses the latest completed assistant reply after the current user message. Errors, aborts, tool calls, empty replies, unpersisted sources, and historical fallback are refused. It appends the first nonempty line under `## Agent`; multiline text also goes to `pm/{project}/runs/{card}.md` with a card link. Repeating the same source ID does not duplicate records. A changed session, branch, input, or binding invalidates a pending request. Partial writes can remain; a verified receipt requires matching readback.
 
@@ -106,7 +108,7 @@ pm/
     ├── tasks/            # Active tasks
     │   └── archive/      # Completed tasks
     ├── docs/             # Docs
-    └── runs/             # Pi multiline reply snapshots, created on demand
+    └── runs/             # Multiline reply snapshots, created on demand
 ```
 
 `/obw-init` creates this skeleton. Re-running it offers safe pre-0.9 migration: archive moves use the Obsidian CLI, missing titles are optionally backfilled, and stale dashboards are left to `/obw-pm refresh dashboard`. That command compares a dashboard with the template as parsed YAML (`scripts/dashboard-diff.py`), regenerates an unedited older version, and asks before discarding hand edits. Existing filenames and hand-edited templates are preserved.
