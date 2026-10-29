@@ -17,8 +17,18 @@ then use the show RSS feed to resolve its enclosure.
 Use OMP-provided network capabilities only. Prefer `read` on the HTTPS iTunes API URLs
 for JSON responses. For RSS/XML, use OMP `browser` (`browser.open`, then `tab.run`/`fetch`
 and read the response text) so XML is preserved; `read` is acceptable when it returns
-unmodified XML. Do not use Claude-only WebFetch metadata, Claude tool names, `curl`, or
-shell scraping. Encode query values with URL APIs rather than string concatenation.
+unmodified XML. Do not use Claude-only WebFetch metadata, Claude tool names, or shell
+scraping. Encode query values with URL APIs rather than string concatenation.
+
+The one exception is checking an audio URL. `read` shows no status code and downloads the
+whole audio body, so run this through `bash` instead; it fetches headers only and follows
+redirects:
+
+```
+curl -sIL -o /dev/null -w '%{http_code} %{content_type}\n' "EPISODE_URL"
+```
+
+Accept the URL only when the output is `200 audio/...`.
 
 When a request fails, record the URL/stage and HTTP status (if available), then follow
 the failure flow below. Never fabricate an audio URL.
@@ -69,8 +79,8 @@ corrected URL or another way to identify the episode. Do not claim that the epis
 does not exist globally.
 
 If the matching result has an `episodeUrl`, it is a shortcut candidate. Validate it
-with an OMP HTTP request and accept it only when it is an absolute HTTP(S) URL and the
-response is HTTP 200 with an `audio/*` content type. If it is missing, malformed,
+with the audio URL check above and accept it only when it is an absolute HTTP(S) URL and
+the check prints HTTP 200 with an `audio/*` content type. If it is missing, malformed,
 blocked, or fails this check, continue to RSS; do not return a merely plausible URL.
 
 ## 4. Resolve the RSS enclosure by GUID
