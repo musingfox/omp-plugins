@@ -24,4 +24,9 @@ for t in locality leverage interface depth seam adapter module; do
 done
 grep -qF '(8ba6f0a)' deepen/scripts/hotspots.sh || fail 'hotspot threshold rationale missing'
 grep -qF '"upstream": "b4555826"' deepen/package.json || fail 'upstream not recorded'
+# OMP never substitutes $ARGUMENTS in a skill body, so a natural-language request read as one skipped hotspots.sh.
+if grep -qF '$ARGUMENTS' "$skill"; then fail 'skill gates scope on $ARGUMENTS'; fi
+grep -qF 'names no scope' "$skill" || fail 'bare survey request not routed to hotspots'
+grep -qF '"this codebase"' "$skill" || fail 'whole-repo wording not ruled out as a scope'
+grep -qF 'bash "${OMP_PLUGIN_ROOT}/scripts/hotspots.sh"' "$skill" || fail 'hotspots.sh not run'
 echo 'ok - task envelope and report contract'

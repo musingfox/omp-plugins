@@ -14,7 +14,7 @@ Plugin root is this skill's package directory. Set `OMP_PLUGIN_ROOT` to that dir
 
 ## 1. Scope
 
-If `$ARGUMENTS` is non-empty, use that string as the scope and skip hotspot inference. Tell the user the chosen scope in one line before doing anything else.
+If the user named a scope (a path, module or area, after `/skill:survey` or in the request), use it and skip hotspot inference. A request that only asks for a survey names no scope, and neither do "this codebase" or "the repo". Tell the user the chosen scope in one line before doing anything else.
 
 Otherwise run from the repository root:
 
