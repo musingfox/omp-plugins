@@ -26,7 +26,7 @@ Append a timestamped bullet to today's daily note. Nothing more. Daily note fold
 3. Append the bullet to today's daily note via `obsidian vault=<VAULT_NAME> daily:append` (creates the note if missing).
 4. Confirm with the appended line. Return `[[<daily-note-basename>]]`.
 
-Example: `記一下 #worklog 完成了 API-first 架構 draft` → `- 14:32 — 完成了 API-first 架構 draft #worklog`
+Example: `記一下 #worklog 完成了 API-first 架構 draft` → `- 14:32 — #worklog 完成了 API-first 架構 draft`
 
 ## note mode
 
