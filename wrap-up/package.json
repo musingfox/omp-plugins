@@ -1,0 +1,19 @@
+{
+  "name": "wrap-up",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": { "test": "bun test tests" },
+  "omp": { "extensions": ["./index.ts"], "upstream": "4af9bcc6" },
+  "pi": { "extensions": ["./pi.ts"], "skills": ["./skills"], "prompts": [] },
+  "peerDependencies": {
+    "@oh-my-pi/pi-coding-agent": "*",
+    "@earendil-works/pi-coding-agent": "*",
+    "typebox": "*"
+  },
+  "peerDependenciesMeta": {
+    "@oh-my-pi/pi-coding-agent": { "optional": true },
+    "@earendil-works/pi-coding-agent": { "optional": true },
+    "typebox": { "optional": true }
+  }
+}
