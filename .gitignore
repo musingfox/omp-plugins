@@ -5,3 +5,4 @@ obw/node_modules/
 obw/.checks/
 viz/node_modules/
 .claude/worktrees/
+.obsidian.yaml
