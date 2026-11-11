@@ -8,6 +8,8 @@ Each plugin is an OMP package: `package.json` with `"omp": {}`, plus conventiona
 
 Claude Code ports live in [cc-plugins](https://github.com/musingfox/cc-plugins).
 
+Latest comparison and native-host verification: [2026-11-11 sync](docs/sync-2026-11-11.md).
+
 ## Install
 
 ```bash
@@ -24,6 +26,9 @@ omp plugin link --local /path/to/omp-plugins/wizard
 omp plugin link --local /path/to/omp-plugins/zen-agent
 omp plugin link --local /path/to/omp-plugins/audit
 omp plugin link --local /path/to/omp-plugins/method
+omp plugin link --local /path/to/omp-plugins/wrap-up
+omp plugin link --local /path/to/omp-plugins/omp-quota
+omp plugin link --local /path/to/omp-plugins/fizzy
 omp plugin link --local /path/to/obsidian-skills   # after adding package.json with "omp": {}
 omp plugin list
 omp plugin doctor
@@ -38,7 +43,7 @@ Reload in-session: `/reload-plugins`.
 | Name | Slash commands | Description |
 |------|----------------|-------------|
 | **viz** | `/viz-inline`, `/viz-render` | chat shapes and browser HTML |
-| **obw** | `/issue`, `/obw-bind`, `/obw-unbind`, `/obw-sync`; OMP tools: `pm_tick`, `pm_note`, `pm_status`; OMP skills: `/obw-init`, `/obw-jot`, `/obw-pm` | Obsidian tasks; writeback live-verified on Pi and OMP; OMP skills |
+| **obw** | `/issue`, `/obw-bind`, `/obw-unbind`, `/obw-sync`; tools on both hosts: `pm_tick`, `pm_note`, `pm_status`; OMP skills: `/obw-init`, `/obw-jot`, `/obw-pm` | Obsidian tasks, live refresh and card actions; native session binding and explicit writeback |
 | **spec** | — | Architecture contracts and domain glossary |
 | **diagnose** | `/diagnose-now` | Evidence-only bug diagnosis and main-session handoff |
 | **deepen** | — | Architecture survey from user scope or git hotspots |
@@ -50,6 +55,9 @@ Reload in-session: `/reload-plugins`.
 | **zen-agent** | — | Visible second Zen browser the user can watch and take over |
 | **audit** | — | Docs and milestone-test audits |
 | **method** | — | Narrow a question into a contract, then deliver it as one node of a contract tree |
+| **wrap-up** | `/wrap-up` | Evidence-based close-out and host-scoped session ratings on OMP and Pi |
+| **omp-quota** | `/quota`, `/quota refresh` | Native OMP／Pi quota widget backed by the local OMP CLI |
+| **fizzy** | skill `fizzy` | Fizzy CLI workflows; requires a compatible CLI |
 | **obsidian** (kepano) | skills `obsidian-cli`, `obsidian-markdown`, `obsidian-bases`, `json-canvas`, `defuddle` | vault I/O syntax for `obw` |
 
 Markdown slash names are filenames; extensions may also register commands. Skill names are skill directory names. OMP does not namespace as `plugin:name`.
