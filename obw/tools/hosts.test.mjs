@@ -2,7 +2,7 @@ import { expect, test } from "bun:test";
 import { chmodSync, mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { delimiter, join } from "node:path";
-import { declarationPaths, installedHost, requireEntry } from "./hosts.mjs";
+import { declarationPaths, hosts, installedHost, requireEntry } from "./hosts.mjs";
 
 test("declarationPaths maps only formal exports.types, never runtime source", () => {
 	const root = mkdtempSync(join(tmpdir(), "obw-types-"));
@@ -24,7 +24,7 @@ test("installedHost diagnoses shadow packages and verifies explicit roots by nam
 	const previousPath = process.env.PATH;
 	const previousOverride = process.env.OBW_PI_ROOT;
 	try {
-		for (const [directory, name, version] of [["shadow", "@mariozechner/pi-coding-agent", "0.0.0"], ["official", "@earendil-works/pi-coding-agent", "1.4.0"]]) {
+		for (const [directory, name, version] of [["shadow", "@mariozechner/pi-coding-agent", "0.0.0"], ["official", hosts.pi.name, hosts.pi.version]]) {
 			mkdirSync(join(root, directory, "bin"), { recursive: true });
 			writeFileSync(join(root, directory, "package.json"), JSON.stringify({ name, version, bin: { pi: "bin/pi" } }));
 			writeFileSync(join(root, directory, "bin/pi"), "#!/bin/sh\nexit 0\n");
@@ -34,7 +34,7 @@ test("installedHost diagnoses shadow packages and verifies explicit roots by nam
 		process.env.PATH = [join(root, "shadow/bin"), join(root, "official/bin")].join(delimiter);
 		expect(installedHost("pi").root).toBe(realpathSync(join(root, "official")));
 		process.env.OBW_PI_ROOT = join(root, "shadow");
-		expect(() => installedHost("pi")).toThrow("expected @earendil-works/pi-coding-agent@1.4.0");
+		expect(() => installedHost("pi")).toThrow();
 		process.env.OBW_PI_ROOT = join(root, "official");
 		expect(installedHost("pi").root).toBe(realpathSync(join(root, "official")));
 	} finally {

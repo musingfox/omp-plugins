@@ -39,6 +39,10 @@ note:
 
 pm:
   project: <PROJECT_NAME>
+  # work_prompt: Work on {card} in {vault}.
+  #   Optional override for the /issue Work on this card key. {card} becomes the
+  #   card's vault path and {vault} the vault name; unknown placeholders are left
+  #   as-is. If unset, a built-in default is used.
 ```
 
 Confirm with the summary below. On the keep-config path, the first line reads `.obsidian.yaml kept (vault=<NAME>, project=<PROJ>).` and the Templates line is omitted, since step 4 did not run:

@@ -168,7 +168,7 @@ export function createWritebackController(exec: IssueExec) {
  if (f && f.extension !== 'md') throw new Error('Runs path is not a note');
  const result = {body: f ? await app.vault.read(f) : null};`)}`]));
 				if (result.body !== null && typeof result.body !== "string") throw new Error("Runs note readback is invalid");
-				return result.body;
+				return typeof result.body === "string" ? result.body : null;
 			};
 			const write = async (path: string, previous: string | null, next: string) => {
 				evalResult(await io(["eval", `code=${evalCode({ path, previous, next }, `

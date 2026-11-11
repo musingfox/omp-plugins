@@ -2,7 +2,7 @@ import { readFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { parseDocument } from "yaml";
 
-export type WorkspaceConfig = { vault: string; project: string };
+export type WorkspaceConfig = { vault: string; project: string; workPrompt?: string };
 export type IssueExec = (command: string, args: string[], options?: { timeout?: number }) => Promise<unknown>;
 export function asRecord(value: unknown): Record<string, unknown> | undefined {
 	return value !== null && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : undefined;
@@ -43,7 +43,8 @@ export async function readWorkspaceConfig(cwd: string): Promise<WorkspaceConfig>
 		if (typeof vault !== "string" || !vault.trim() || hasControlCharacters(vault) || !validSegment(project)) {
 			throw new Error(`${path} requires a vault name and pm.project folder; run /obw-init first`);
 		}
-		return { vault, project };
+		const workPrompt = asRecord(config.pm)?.work_prompt;
+		return { vault, project, ...(typeof workPrompt === "string" && workPrompt.trim() ? { workPrompt } : {}) };
 	}
 	throw new Error(`No .obsidian.yaml in ${cwd} or its parents; run /obw-init first`);
 }

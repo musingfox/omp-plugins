@@ -1,12 +1,25 @@
 import type { ExtensionAPI, ExtensionCommandContext, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { parseKey, truncateToWidth } from "@earendil-works/pi-tui";
+import { Type } from "typebox";
+import { createPmTools, PM_TOOLS, pmToolResult } from "./pm";
 import { createIssueBrowser, runIssueCommand, sanitizeText } from "./issue";
 import { createBindingController, getBinding, hasPersistedConversation, hasPersistedSource, type BindingContext } from "./session";
 import { readWorkspaceConfig } from "./workspace";
 import { createWritebackController, type WritebackStartContext } from "./writeback";
 
 export default function extension(pi: ExtensionAPI): void {
+	pi.registerFlag("obw-work-prompt", { type: "string", description: "Default Work on this card prompt; project pm.work_prompt takes precedence" });
 	const exec = pi.exec.bind(pi);
+	const pm = createPmTools(exec);
+	for (const tool of PM_TOOLS) {
+		pi.registerTool({
+			...tool, parameters: Type.Unsafe<Record<string, unknown>>(tool.parameters),
+			execute: async (_id, params, _signal, _update, ctx) => {
+				const result = await pm.run(tool.name, params, ctx.cwd);
+				return { ...pmToolResult(result), details: result };
+			},
+		});
+	}
 	const bindings = createBindingController(exec, "pi");
 	const writebacks = createWritebackController(exec);
 	let epoch = 0;
@@ -88,6 +101,7 @@ export default function extension(pi: ExtensionAPI): void {
 		handler: async (argument, ctx) => {
 			closeBrowser?.();
 			const request = ++uiRevision;
+			const workOverride = pi.getFlag("obw-work-prompt");
 			await runIssueCommand(argument, ctx.cwd, exec, {
 				mode: ctx.mode,
 				report: (message) => report(ctx, message),
@@ -97,6 +111,12 @@ export default function extension(pi: ExtensionAPI): void {
 						const browser = createIssueBrowser(config, exec, {
 							changed: () => tui.requestRender(), close: () => done(),
 							fitLine: (text, width) => truncateToWidth(sanitizeText(text, Number.MAX_SAFE_INTEGER), width),
+							cwd: ctx.cwd, height: () => process.stdout.rows ?? 24,
+							userWorkPrompt: typeof workOverride === "string" ? workOverride : undefined,
+							submitWork: async (text) => {
+								if (request !== uiRevision) throw new Error("Issue session changed");
+								pi.sendUserMessage(text, ctx.isIdle() ? undefined : { deliverAs: "followUp" });
+							},
 							bind: (path) => {
 								invalidate();
 								return bindings.bind(config, path, { ...context(ctx), confirm: (owner) => browser.confirmReplacement(owner) });

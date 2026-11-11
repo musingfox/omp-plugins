@@ -19,6 +19,7 @@ function findUser(ctx: ExtensionContext, timestamp: number) {
 }
 
 export default function extension(omp: ExtensionAPI): void {
+	omp.registerFlag("obw-work-prompt", { type: "string", description: "Default Work on this card prompt; project pm.work_prompt takes precedence" });
 	const exec = omp.exec.bind(omp);
 	const pm = createPmTools(exec);
 	for (const tool of PM_TOOLS) {
@@ -128,6 +129,7 @@ export default function extension(omp: ExtensionAPI): void {
 		handler: async (argument, ctx) => {
 			closeBrowser?.();
 			const request = ++uiRevision;
+			const workOverride = omp.getFlag("obw-work-prompt");
 			await runIssueCommand(argument, ctx.cwd, exec, {
 				mode: ctx.mode,
 				report: (message) => report(ctx, message),
@@ -137,6 +139,12 @@ export default function extension(omp: ExtensionAPI): void {
 						const browser = createIssueBrowser(config, exec, {
 							changed: () => tui.requestRender(), close: () => done(),
 							fitLine: (text, width) => truncateToWidth(sanitizeText(text, Number.MAX_SAFE_INTEGER), width),
+							cwd: ctx.cwd, height: () => process.stdout.rows ?? 24,
+							userWorkPrompt: typeof workOverride === "string" ? workOverride : undefined,
+							submitWork: async (text) => {
+								if (request !== uiRevision) throw new Error("Issue session changed");
+								await omp.sendUserMessage(text, ctx.isIdle() ? undefined : { deliverAs: "followUp" });
+							},
 							bind: (path) => {
 								invalidate();
 								return bindings.bind(config, path, { ...context(ctx), confirm: (owner) => browser.confirmReplacement(owner) });

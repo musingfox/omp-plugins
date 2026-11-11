@@ -2,8 +2,8 @@ import { existsSync, readFileSync, realpathSync } from "node:fs";
 import { delimiter, dirname, join, resolve } from "node:path";
 
 export const hosts = {
-	omp: { executable: "omp", name: "@oh-my-pi/pi-coding-agent", version: "18.13.3", entry: "index.ts" },
-	pi: { executable: "pi", name: "@earendil-works/pi-coding-agent", version: "1.4.0", entry: "pi.ts" },
+	omp: { executable: "omp", name: "@oh-my-pi/pi-coding-agent", version: "18.18.6", entry: "index.ts" },
+	pi: { executable: "pi", name: "@earendil-works/pi-coding-agent", version: "1.5.0", entry: "pi.ts" },
 };
 
 export function installedHost(id) {

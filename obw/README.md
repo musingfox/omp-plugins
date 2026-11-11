@@ -15,6 +15,10 @@ Project-scoped Obsidian tasks for pi and oh-my-pi (OMP). All vault I/O uses the 
 
 `/issue` requires TUI mode. Left/Backspace returns to the previous page; Escape/q exits. Card keys on both hosts are `b` to Bind and `u` to Unbind. A foreign-owner replacement requires explicit confirmation: `y` approves; `n`, Enter, or Back declines; Exit cancels the pending approval. On OMP, `/obw-bind` asks through OMP's own Yes/No selector instead, where `y` does nothing; choose Yes and press Enter. The project comes from `.obsidian.yaml`; there is no project picker.
 
+The open pane rereads its selected view and card every five seconds, preserving the selected path; failures remain visible without erasing the previous card. List keys: `f` edits a text filter, `p` cycles priority, `s` toggles title/priority sorting, and `x` clears filters. Cards show priority badges and tags. On a card, `w` sends **Work on this card** to the same host session, `o` opens its Markdown through the sibling `viz` package, Tab/Enter follows a resolved relationship, arrows scroll, and Back returns through the relationship trail. Relationship documents are read-only. Closing the pane cancels refreshes and rejects delayed updates.
+
+Work is submitted once per card while that pane is open; a failed admission permits retry. The pane keeps focus and shows **Sent to agent** after submission. A work prompt may itself ask the model to change task status, but the UI does not bind, modify, or mark a task done on its own.
+
 Both hosts restore binding from the active session branch. A new session has no session file until its first reply, so it cannot bind before then. The card's `session` property records its owner; Unbind does not clear that property or historical Agent records. On Pi, during a normal model request, the `context` observer records work start after the real user message is persisted. Failures before that boundary are not covered. Neither host automatically writes results or changes task status.
 
 On OMP 18.13.3, work start is recorded from the user message's `message_end` event. OMP fires `context` before it persists the turn's user message, and it has no awaited hook between persisting that message and starting the model request. The handler waits up to 2 seconds for the user entry to reach the session branch, then records it once; if the entry never appears, it warns and writes nothing, and a session, branch, input, or binding change during that wait refuses the record. OMP does not wait for this handler, so the record can land after the model request has started. Steering messages (user messages marked `steering`) and auto-continue prompts (developer messages) do not record a start.
@@ -23,17 +27,15 @@ On OMP 18.13.3, work start is recorded from the user message's `message_end` eve
 
 Print/JSON reports use stderr; RPC/TUI reports use notifications. `/issue` reports its mode restriction rather than opening a custom UI outside TUI.
 
-## Pm tools (OMP)
+## Pm tools (OMP and Pi)
 
-The OMP extension registers three tools the model can call to change a task card:
+Both extensions register three tools the model can call to change a task card:
 
 - `pm_tick {card, index, checked}` sets the `index`-th checkbox (from 1) under `## Acceptance Criteria`.
 - `pm_note {card, line}` appends `- line` at the end of `## Notes`, creating the section when it is missing.
 - `pm_status {card, status}` sets the frontmatter `status` to `todo`, `in-progress`, `blocked` or `done`. It does not bind the session.
 
-`card` is the file name without `.md`: `a` is `pm/<project>/tasks/a.md`, with the vault and project from the nearest `.obsidian.yaml`. A name that is empty, `.` or `..`, or holds `/`, `\` or a control character is refused before any CLI call. Each call reads the card with `obsidian vault=<vault> eval`, writes it only if it is unchanged since that read, and reads it back; calls run one after another. The result is one JSON line of text: `{"ok":true,"path":"pm/<project>/tasks/a.md"}`, or `{"ok":false,"reason":"..."}` with `isError` set. The logic lives in `pm.ts`; `index.ts` only registers it.
-
-Pi does not get these tools yet. Pi's `registerTool` takes a TypeBox schema, so a pi adapter would need a `typebox` dependency rather than reuse the JSON Schema in `pm.ts`.
+`card` is the file name without `.md`: `a` is `pm/<project>/tasks/a.md`, with the vault and project from the nearest `.obsidian.yaml`. A name that is empty, `.` or `..`, or holds `/`, `\` or a control character is refused before any CLI call. Each call reads the card with `obsidian vault=<vault> eval`, writes it only if it is unchanged since that read, and reads it back; calls run one after another. The result is one JSON line of text: `{"ok":true,"path":"pm/<project>/tasks/a.md"}`, or `{"ok":false,"reason":"..."}` with `isError` set. Both adapters reuse `pm.ts`; Pi wraps the same JSON Schema with the host-provided TypeBox `Type.Unsafe`, rather than duplicating the edit engine.
 
 ## OMP skills
 
@@ -94,9 +96,12 @@ note:
 
 pm:
   project: my-project          # Omit this section to disable /obw-pm
+  # work_prompt: "Work on {card} in {vault}."
 ```
 
 Daily note folder / filename / template are **not** in `.obsidian.yaml` — they come from Obsidian's Daily Notes settings.
+
+For `w`, the nearest config is reread on each press. A nonblank `pm.work_prompt` overrides the host CLI flag `--obw-work-prompt`, which overrides the built-in task/AC prompt. `{card}` is the vault-relative task path and `{vault}` is the vault name; unknown placeholders are preserved. A changed vault/project requires reopening `/issue`.
 
 ## Vault Layout (`/obw-pm`)
 

@@ -13,17 +13,20 @@
         "@types/bun": "1.4.3",
         "@types/node": "22.19.19",
         "@types/node-bun": "npm:@types/node@26.6.5",
+        "typebox": "1.3.27",
         "typescript": "5.9.3",
       },
       "peerDependencies": {
         "@earendil-works/pi-coding-agent": "*",
         "@earendil-works/pi-tui": "*",
         "@oh-my-pi/pi-tui": "*",
+        "typebox": "*",
       },
       "optionalPeers": [
         "@earendil-works/pi-coding-agent",
         "@earendil-works/pi-tui",
         "@oh-my-pi/pi-tui",
+        "typebox",
       ],
     },
   },
@@ -121,6 +124,8 @@
     "micromark-util-types": ["micromark-util-types@2.0.3", "", {}, "sha512-oxB2Ik03hI0gv+VNn9tnh1t1YEe9MDPptViAEgfdf3YQHsn0pzGTgCdlSCJXcwhqm8phaEuM7zeEu3QQzVBrPg=="],
 
     "ms": ["ms@2.1.3", "", {}, "sha512-6FlzubTLZG3J2a/NVCAleEhjzq5oxgHyaCU9yYXvcLsvoVaHJq/s5xXI6/XXP6tz7R9xAOtHnSO/tXtF3WRTlA=="],
+
+    "typebox": ["typebox@1.3.27", "", {}, "sha512-zu+jc1pcy4UiNThxikUr36f0Rybk9PEeCg/NE6adeWr/SKsdNO4EzZHYRDlv2YCVAfj3Odq3dESSo/jNyoBXzA=="],
 
     "typescript": ["typescript@5.9.3", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw=="],
 

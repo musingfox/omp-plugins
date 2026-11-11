@@ -9,6 +9,7 @@ tags: []
 parent: 
 blocked_by: []
 related: []
+session:
 created: {{date}}
 ---
 
@@ -21,5 +22,7 @@ created: {{date}}
 ## Acceptance Criteria
 
 - [ ] 
+
+## Agent
 
 ## Notes

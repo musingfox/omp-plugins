@@ -21,8 +21,12 @@ Bases (`.base`) files are pure YAML — Obsidian's Templates plugin does not pro
 
 If you rewrite these templates, keep these fields — `/obw-pm` search and Bases dashboards depend on this schema:
 
-- Tasks: `title`, `type: task`, `status`, `priority`, `project`, `tags`, `due`, `created`, `completed`, `parent`, `blocked_by`, `related`
+- Tasks: `title`, `type: task`, `status`, `priority`, `project`, `tags`, `due`, `created`, `completed`, `parent`, `blocked_by`, `related`, `session`
 - Docs: `title`, `type: doc`, `project`, `created`, `updated`
+
+The `session` field and the `## Agent` section back the `/obw-bind` / `/obw-sync` writeback: binding records the host session id in `session` (via frontmatter processing), and writeback appends one line per event under `## Agent`. Keep the empty `## Agent` heading in the template; writeback appends under it.
+
+Task body sections the CLI flow depends on: `## Description`, `## Acceptance Criteria` (checkbox list), `## Agent`, `## Notes`.
 
 ## Regenerating
 

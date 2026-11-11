@@ -21,7 +21,7 @@ pm/{project}/
 └── docs/
 ```
 
-Folders are created on demand by `create`/`move`. If a project dashboard is missing, regenerate it from `${OMP_PLUGIN_ROOT}/templates/dashboard-project.base`; do not overwrite an existing dashboard during ordinary status operations. Preserve existing dashboards and templates unless the user explicitly requests regeneration.
+`create` auto-creates missing parent folders, but `move` fails with `ENOENT` when the destination folder is missing (e.g. the first archive). Create the destination only if absent, using the specified vault's app handle: `obsidian vault={vault} eval code="if (!app.vault.getAbstractFileByPath('pm/{project}/tasks/archive')) await app.vault.createFolder('pm/{project}/tasks/archive')"`; never delete or replace an existing folder. If a project dashboard is missing, regenerate it from `${OMP_PLUGIN_ROOT}/templates/dashboard-project.base`; do not overwrite an existing dashboard during ordinary status operations. Preserve existing dashboards and templates unless the user explicitly requests regeneration.
 
 ## Names and templates
 
@@ -34,7 +34,7 @@ Fixed templates are `task` and `doc`, installed by `/obw-init`; if one is absent
 - **Create task**: `obsidian vault={vault} create` `pm/{project}/tasks/{kebab}.md` with `template=task`; set `title`, `project`, and requested `priority`, `due`, `tags`.
 - **Create doc**: `obsidian vault={vault} create` `pm/{project}/docs/{kebab}.md` with `template=doc`; set `title` and `project`.
 - **List**: `obsidian vault={vault} search` with `query="[type:task] [project:{project}] [status:<s>]" format=json`.
-- **Archive**: confirm first; inspect dependents, set `status=done` and `completed`, then `obsidian vault={vault} move` to `pm/{project}/tasks/archive`.
+- **Archive**: confirm first; inspect dependents, set `status=done` and `completed`, ensure the archive folder exists using the guarded command above, then `obsidian vault={vault} move` to `pm/{project}/tasks/archive`. `move` does not create destination folders.
 - **Delete**: confirm first, then `obsidian vault={vault} delete`; it moves the note to the trash. Never silently replace an existing note.
 
 A create error stops publishing: report landed and unlanded filenames and never retry the create.
@@ -68,7 +68,7 @@ obsidian vault={vault} search query="[type:task] [project:{project}] -[status:do
 
 ## Schema
 
-Task: `title`, `type: task`, `status` (todo/in-progress/blocked/done), `priority` (high/medium/low), `project`, `due`, `tags`, `parent`, `blocked_by`, `related`, `created`, `completed`.
+Task: `title`, `type: task`, `status` (todo/in-progress/blocked/done), `priority` (high/medium/low), `project`, `due`, `tags`, `parent`, `blocked_by`, `related`, `session` (the host session id bound to the task), `created`, `completed`. The `## Agent` section holds the writeback log for the bound session — do not edit it by hand.
 Doc: `title`, `type: doc`, `project`, `created`, `updated`.
 
 ## Dashboards
