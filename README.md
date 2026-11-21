@@ -64,6 +64,8 @@ Markdown slash names are filenames; extensions may also register commands. Skill
 
 ## Develop locally
 
+The pre-commit hook checks the staged index: OBW documentation and upstream-only `obw/package.json` metadata changes skip the SDK check; runtime changes run it. Run the focused hook regression suite with `bun test ./.githooks/pre-commit.test.mjs`.
+
 ```bash
 omp plugin link --local /path/to/omp-plugins/viz
 ```
