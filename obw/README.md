@@ -56,8 +56,9 @@ The Pi manifest exposes only the extension. It does not load these OMP skills or
 
 ## Prerequisites
 
-- [Obsidian](https://obsidian.md) app running, with a working `obsidian` executable on PATH. See the [Obsidian CLI documentation](https://help.obsidian.md/cli). This is not the unrelated standalone `obsidian-cli` binary by Yakitrak.
-- For OMP skills, kepano's [obsidian-skills](https://github.com/kepano/obsidian-skills) linked as an OMP package (`package.json` with `"omp": {}` + `omp plugin link --local`).
+- [Obsidian](https://obsidian.md) desktop app running — the official `obsidian` CLI talks to the open app. Obsidian Headless (`ob`) only syncs and publishes, so it cannot stand in.
+- Obsidian CLI enabled in the desktop app ([documentation](https://help.obsidian.md/cli)). The `obsidian` command ships with the official Obsidian installer (invoked as `obsidian vault=<name> ...`); do not install the unrelated npm package `obsidian-cli` or community `obsidian-cli` plugin.
+- For OMP skills, kepano's [obsidian-skills](https://github.com/kepano/obsidian-skills) linked as an OMP package (`package.json` with `"omp": {}` + `omp plugin link --local`). Install its skills dependency manually; this plugin does not auto-install dependencies.
 - **Templates** core plugin enabled (required for `/obw-pm` — `task` / `doc` templates)
 - **Daily Notes** core plugin enabled (required for `/obw-jot` quick capture)
 - **Bases** core plugin enabled (required only for `/obw-pm` dashboards — bundled in Obsidian 1.9+)

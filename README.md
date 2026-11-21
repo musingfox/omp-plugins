@@ -8,7 +8,7 @@ Each plugin is an OMP package: `package.json` with `"omp": {}`, plus conventiona
 
 Claude Code ports live in [cc-plugins](https://github.com/musingfox/cc-plugins).
 
-Latest comparison and native-host verification: [2026-11-11 sync](docs/sync-2026-11-11.md).
+Latest upstream comparison: [2026-11-22 sync](docs/sync-2026-11-22.md). Native-host verification: [2026-11-11 sync](docs/sync-2026-11-11.md).
 
 ## Install
 

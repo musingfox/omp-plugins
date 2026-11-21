@@ -104,6 +104,11 @@ prints bodies only, so the map stays where it is useful and out of the brief.
 Add the back-link on the other entry too; a one-way link is one you will not
 find from the side you are standing on.
 
+When an entry states an invariant over inputs — a round-trip (`decode(encode(x)) == x`),
+idempotency, an always-true bound, or equivalence to a naive implementation — the
+strongest `check:` is a property-based test (fast-check, Hypothesis, proptest) run by a
+shell command, because generated inputs are not biased by the agent that wrote the code.
+
 ## verify — push each entry to the strongest form available
 
 Prefer `check:` over prose. `test:` is not executable yet and is reported as debt

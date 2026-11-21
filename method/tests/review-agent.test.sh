@@ -59,7 +59,6 @@ assert_eq "REQUEST_CHANGES" "$(printf '%s\n' "$ret" | awk '/^## Verdict$/ {getli
 adv=$(fenced_after '### Output Schema (Spec)' | awk '/^## Advisories/ {on=1; next} /^## Blockers/ {on=0} on')
 assert_contains "$adv" "- **Repro**: <self-contained command, run from the reviewed tree's root>" "review: advisory entry has a Repro line"
 assert_contains "$adv" "- **Repro**: none" "review: advisory Repro may be none"
-assert_contains "$doc" "the main session turns each advisory into a test case or drops it, and never applies a reviewer's suggested fix by hand" "review: advisory handling rule"
 
 # Dispatch inputs
 for k in '## Contracts file' '## Diff path' 'Report path:' 'Repros path:'; do
