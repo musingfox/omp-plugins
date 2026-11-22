@@ -1,0 +1,15 @@
+{
+  "name": "search-agent",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "omp": {
+    "extensions": [],
+    "upstream": "32cf7767df50f7f13307253cde6c9be4a32e26ca"
+  },
+  "pi": {
+    "extensions": ["./pi/extension.ts"],
+    "skills": ["./skills"],
+    "prompts": []
+  }
+}

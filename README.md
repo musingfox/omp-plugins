@@ -24,6 +24,7 @@ omp plugin link --local /path/to/omp-plugins/apple-podcasts
 omp plugin link --local /path/to/omp-plugins/hook-guard
 omp plugin link --local /path/to/omp-plugins/wizard
 omp plugin link --local /path/to/omp-plugins/zen-agent
+omp plugin link --local /path/to/omp-plugins/search-agent
 omp plugin link --local /path/to/omp-plugins/audit
 omp plugin link --local /path/to/omp-plugins/method
 omp plugin link --local /path/to/omp-plugins/wrap-up
@@ -53,6 +54,7 @@ Reload in-session: `/reload-plugins`.
 | **hook-guard** | `/hook-guard` | Guided Git hook setup and commit checks |
 | **wizard** | — | Human-operated setup and credential wizards |
 | **zen-agent** | — | Visible second Zen browser the user can watch and take over |
+| **search-agent** | native MCP tools on OMP and Pi; skill `search-agent` | Search browser with user consent, visible agent-owned tabs, and sensitive-step handover |
 | **audit** | — | Docs and milestone-test audits |
 | **method** | — | Narrow a question into a contract, then deliver it as one node of a contract tree |
 | **wrap-up** | `/wrap-up` | Evidence-based close-out and host-scoped session ratings on OMP and Pi |

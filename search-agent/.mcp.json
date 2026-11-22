@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "search": {
+      "command": "${OMP_PLUGIN_ROOT}/bin/search-mcp",
+      "timeout": 0
+    }
+  }
+}
