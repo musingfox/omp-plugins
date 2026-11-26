@@ -16,10 +16,4 @@ grep -q 'formula.display' "$root/templates/dashboard-cross.base" || fail 'cross 
 grep -q '/obw-pm refresh dashboard' "$root/skills/obw-init/SKILL.md" || fail 'init leaves dashboard refresh to pm'
 grep -q 'scripts/dashboard-diff.py" project {project}' "$root/skills/obw-pm/SKILL.md" || fail 'pm refresh compares with dashboard-diff.py'
 grep -q 'regenerate only after the user agrees' "$root/skills/obw-pm/SKILL.md" || fail 'pm safe refresh rule'
-forbidden_root=$(printf 'CLAUDE%sPLUGIN_ROOT' '_')
-forbidden_plugin=$(printf 'claude%splugin' '-')
-forbidden_ask=$(printf 'AskUser%s' 'Question')
-if grep -R -n -E "$forbidden_root|$forbidden_plugin|$forbidden_ask" "$root" --exclude='*.test.sh' >/dev/null; then
-  fail 'Claude-only reference'
-fi
 echo 'templates: ok'

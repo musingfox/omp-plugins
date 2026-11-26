@@ -10,9 +10,9 @@ test("declarationPaths maps only formal exports.types, never runtime source", ()
 		writeFileSync(join(root, "index.d.ts"), "export {};\n");
 		expect(declarationPaths({ root, name: "official-host", pkg: { exports: {
 			".": { types: "./index.d.ts", import: "./src/index.ts" },
-			"./extensions/*": { types: "./dist/*.d.ts", import: "./src/*.ts" },
+			"./*": { types: "./dist/*.d.ts", import: "./src/*.ts" },
 			"./runtime": { import: "./runtime.js" },
-		} } })).toEqual({ "official-host": [join(root, "index.d.ts")], "official-host/extensions/*": [join(root, "dist/*.d.ts")] });
+		} } })).toEqual({ "official-host": [join(root, "index.d.ts")], "official-host/*": [join(root, "dist/*.d.ts")] });
 		expect(() => declarationPaths({ root, name: "official-host", pkg: { exports: { ".": { import: "./src/index.ts" } } } })).toThrow("no root exports.types");
 	} finally {
 		rmSync(root, { recursive: true, force: true });

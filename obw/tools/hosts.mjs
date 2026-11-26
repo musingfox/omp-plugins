@@ -1,14 +1,36 @@
 import { existsSync, readFileSync, realpathSync } from "node:fs";
 import { delimiter, dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
 export const hosts = {
-	omp: { executable: "omp", name: "@oh-my-pi/pi-coding-agent", version: "18.18.6", entry: "index.ts" },
+	omp: { executable: "omp", name: "@oh-my-pi/pi-coding-agent", version: "19.2.1", entry: "index.ts" },
 	pi: { executable: "pi", name: "@earendil-works/pi-coding-agent", version: "1.5.0", entry: "pi.ts" },
 };
+
+function executableOnPath(name, sdkRoot) {
+	for (const directory of (process.env.PATH ?? "").split(delimiter)) {
+		const executable = Bun.which(name, { PATH: directory || "." });
+		if (!executable) continue;
+		const binary = realpathSync(executable);
+		if (!binary.startsWith(`${sdkRoot}/`)) return binary;
+	}
+	return undefined;
+}
 
 export function installedHost(id) {
 	const host = hosts[id];
 	if (!host) throw new Error(`Unknown host: ${id}`);
+	if (id === "omp") {
+		const root = realpathSync(resolve(dirname(fileURLToPath(import.meta.url)), "../node_modules", host.name));
+		const pkg = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
+		if (pkg.name !== host.name || pkg.version !== host.version) {
+			throw new Error(`Expected repository SDK ${host.name}@${host.version}, got ${pkg.name}@${pkg.version}`);
+		}
+		const binary = executableOnPath(host.executable, root);
+		if (!binary) throw new Error(`Cannot locate native ${host.executable} CLI on PATH`);
+		console.log(`[host:${id}] repository SDK root=${root}; ${pkg.name}@${pkg.version}; native executable=${binary}`);
+		return { ...host, id, binary, root, pkg };
+	}
 	const override = process.env[`OBW_${id.toUpperCase()}_ROOT`];
 	if (override) {
 		const root = realpathSync(override);

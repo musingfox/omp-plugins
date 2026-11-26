@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { applyIssueCards, createIssueComponent, initialIssueState, isSafeCardPath, nextIssueRequest, renderMermaidFallback, type IssueState } from "./index";
+import { applyIssueCards, createIssueComponent, initialIssueState, isSafeCardPath, nextIssueRequest, renderMermaidFallback, type IssueState } from "./issue";
 
 test("navigation groups All Tasks and toggles done heading", () => {
   let state: IssueState = { ...initialIssueState(), mode: "cards", view: "All Tasks", cards: [{ title: "A", status: "todo", priority: "high" }, { title: "B", status: "done" }] };

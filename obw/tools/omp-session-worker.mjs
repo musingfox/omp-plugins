@@ -9,9 +9,17 @@ import { pathToFileURL } from "node:url";
 import { runInNewContext } from "node:vm";
 
 const { host, entry } = JSON.parse(process.argv[2]);
+const runtimeExport = (specifier) => {
+	const exact = specifier ? host.pkg.exports[`./${specifier}`] : host.pkg.exports["."];
+	if (typeof exact?.import === "string") return exact.import;
+	const wildcard = host.pkg.exports["./*"];
+	if (typeof wildcard?.import !== "string") throw new Error(`No official runtime export for ${specifier}`);
+	return wildcard.import.replace("*", specifier);
+};
+const hostImport = (specifier) => import(pathToFileURL(join(host.root, runtimeExport(specifier))).href);
 const ai = await import(pathToFileURL(Bun.resolveSync("@oh-my-pi/pi-ai", host.root)).href);
-const omp = await import(pathToFileURL(join(host.root, host.pkg.exports["."].import)).href);
-const { initializeExtensions } = await import(pathToFileURL(join(host.root, host.pkg.exports["./modes/*"].import.replace("*", "runtime-init"))).href);
+const omp = await hostImport("");
+const { initializeExtensions } = await hostImport("modes/runtime-init");
 const { default: obw } = await import(pathToFileURL(entry).href);
 
 const root = mkdtempSync(join(tmpdir(), "obw-omp-session-"));

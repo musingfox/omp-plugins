@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { declarationPaths, installedHost } from "./hosts.mjs";
-import { bunTypecheckEnvironment, coreTypecheckConfig, hostTypecheckConfig, tuiDeclarationPaths } from "./typecheck-config.mjs";
+import { bunTypecheckEnvironment, coreTypecheckConfig, hostTypecheckConfig, nativeDeclarationPaths, tuiDeclarationPaths } from "./typecheck-config.mjs";
 
 const packageDir = fileURLToPath(new URL("../", import.meta.url));
 
@@ -20,6 +20,7 @@ test("pi source check selects official Node 22 declarations and excludes every t
 		node: [resolve(nodeRoot, "index.d.ts")],
 		path: [resolve(nodeRoot, "path.d.ts")],
 		"node:path": [resolve(nodeRoot, "path.d.ts")],
+		"@modelcontextprotocol/sdk/*": [resolve(packageDir, "node_modules/@modelcontextprotocol/sdk/dist/esm/*")],
 	});
 	expect(config.exclude).toContain("../**/*.test.ts");
 	expect(config.exclude).toContain("../index.ts");
@@ -43,7 +44,7 @@ test("Bun type reference root resolves only the official Node 26 alias", () => {
 	}
 });
 
-test("OMP check retains its official SDK and Bun tests, skipping only library declaration checks", () => {
+test("OMP 19.2.1 source check uses official SDK, TUI and native exports with its existing library-check policy", () => {
 	const host = installedHost("omp");
 	const root = mkdtempSync(join(tmpdir(), "obw-omp-types-"));
 	let config;
@@ -51,7 +52,10 @@ test("OMP check retains its official SDK and Bun tests, skipping only library de
 	finally { rmSync(root, { recursive: true, force: true }); }
 	expect(config.compilerOptions.types).toEqual(["bun"]);
 	expect(config.compilerOptions.typeRoots).toEqual([root]);
-	expect(config.compilerOptions.paths).toEqual({ ...declarationPaths(host), ...tuiDeclarationPaths(host), node: [resolve(packageDir, "node_modules/@types/node-bun/index.d.ts")] });
+	expect(config.compilerOptions.paths).toEqual({
+		...declarationPaths(host), ...tuiDeclarationPaths(host), ...nativeDeclarationPaths(host),
+		node: [resolve(packageDir, "node_modules/@types/node-bun/index.d.ts")],
+	});
 	expect(config.include).toEqual(["../**/*.ts"]);
 	expect(config.exclude).not.toContain("../**/*.test.ts");
 	expect(config.exclude).toContain("../pi.ts");

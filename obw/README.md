@@ -73,7 +73,7 @@ bun install --cwd obw --frozen-lockfile --omit peer --ignore-scripts
 pi --extension ./obw/pi.ts
 ```
 
-Peer dependencies are omitted to avoid installing another host runtime. This invocation does not change persistent Pi settings. Configure `.obsidian.yaml` yourself; Pi does not expose `/obw-init`.
+Peer dependencies are omitted because each host supplies its runtime APIs; the pinned OMP SDK is a development dependency for checks, not a replacement for either installed host. This invocation does not change persistent Pi settings. Configure `.obsidian.yaml` yourself; Pi does not expose `/obw-init`.
 
 OMP package loading:
 
@@ -81,6 +81,10 @@ OMP package loading:
 omp plugin link --local /path/to/omp-plugins/obw
 omp plugin link --local /path/to/obsidian-skills
 ```
+
+OMP 19.2.1 uses the host-provided `@oh-my-pi/pi-natives` keyboard parser and
+`@oh-my-pi/pi-tui/text/width` truncation API; the TUI root no longer exports
+`parseKey` or `truncateToWidth`. The Pi entry keeps its own host's TUI imports.
 
 Vault operations use `obsidian`, `jq`, `cp`, and `sed`. Approve those tools when OMP prompts.
 
@@ -132,6 +136,12 @@ New notes use kebab-case filenames while `title` retains the human-readable name
 
 From the repository root:
 
+Install the locked development dependencies first:
+`bun install --cwd obw --frozen-lockfile --omit peer --ignore-scripts`.
+The OMP SDK is pinned to 19.2.1 for checks; it does not replace the installed
+`omp` executable. Pi checks also resolve GenAI's optional MCP type dependency
+from the repo's pinned development SDK, without changing the global Pi install.
+
 ```bash
 bun run --cwd obw typecheck:pi
 bun run --cwd obw typecheck:core
@@ -140,7 +150,7 @@ bun run --cwd obw check:load
 bun run --cwd obw test
 ```
 
-Pi/core source checks are strict; the tools check uses checkJs. These commands cover different layers, not a full-package success claim. The OMP typecheck sets `skipLibCheck`, because OMP's published declaration graph does not type-check on its own; OBW's own use of the OMP API stays strict. `bun run --cwd obw check` runs in the repo-local pre-commit hook; do not bypass it. The [acceptance record](docs/dual-host-plan.md#8-pi-驗收紀錄) distinguishes unit/fixture, headless, model, and live-browser evidence.
+OMP/Pi/core source checks are strict; the tools check uses checkJs. These commands cover different layers, not a full-package success claim. OMP checks use the pinned official SDK and separately load the extension in the matching installed CLI. The existing OMP `skipLibCheck` policy is retained because its published `CustomToolAdapter` declaration does not satisfy `AgentTool`; OBW's own API usage remains strictly checked. Pi does not skip library checks. `bun run --cwd obw check` runs in the repo-local pre-commit hook; do not bypass it. The [acceptance record](docs/dual-host-plan.md#8-pi-驗收紀錄) distinguishes unit/fixture, headless, model, and live-browser evidence.
 
 ## OMP skill examples
 

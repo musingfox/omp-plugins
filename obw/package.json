@@ -39,6 +39,8 @@
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.15",
+    "@modelcontextprotocol/sdk": "1.25.2",
+    "@oh-my-pi/pi-coding-agent": "19.2.1",
     "@types/bun": "1.4.3",
     "@types/node": "22.19.19",
     "@types/node-bun": "npm:@types/node@26.6.5",

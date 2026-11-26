@@ -1,5 +1,6 @@
 import type { ExtensionAPI, ExtensionCommandContext, ExtensionContext } from "@oh-my-pi/pi-coding-agent";
-import { parseKey, truncateToWidth } from "@oh-my-pi/pi-tui";
+import { parseKey } from "@oh-my-pi/pi-natives";
+import { truncate } from "@oh-my-pi/pi-tui/text/width";
 import { createIssueBrowser, runIssueCommand, sanitizeText } from "./issue";
 import { createPmTools, PM_TOOLS, pmToolResult } from "./pm";
 import { createBindingController, getBinding, hasPersistedConversation, hasPersistedSource, type BindingContext } from "./session";
@@ -138,7 +139,7 @@ export default function extension(omp: ExtensionAPI): void {
 					await ctx.ui.custom<void>((tui, _theme, keybindings, done) => {
 						const browser = createIssueBrowser(config, exec, {
 							changed: () => tui.requestRender(), close: () => done(),
-							fitLine: (text, width) => truncateToWidth(sanitizeText(text, Number.MAX_SAFE_INTEGER), width),
+							fitLine: (text, width) => truncate(sanitizeText(text, Number.MAX_SAFE_INTEGER), width),
 							cwd: ctx.cwd, height: () => process.stdout.rows ?? 24,
 							userWorkPrompt: typeof workOverride === "string" ? workOverride : undefined,
 							submitWork: async (text) => {
@@ -156,7 +157,10 @@ export default function extension(omp: ExtensionAPI): void {
 						void browser.start(view);
 						return {
 							render: (width) => browser.render(width), invalidate: () => browser.invalidate(), dispose: () => browser.dispose(),
-							handleInput: (input) => browser.handleInput(keybindings.matches(input, "app.interrupt") ? "escape" : parseKey(input) ?? input),
+							handleInput: (input) => {
+								const key = parseKey(input, true) ?? input;
+								browser.handleInput(keybindings.matchesId(key, "app.interrupt") ? "escape" : key);
+							},
 						};
 					});
 				},

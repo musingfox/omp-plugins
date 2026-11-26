@@ -6,9 +6,16 @@ import { assertOmpWritebackRegistration } from "./omp-registration.mjs";
 import { assertPiWritebackRegistration } from "./pi-registration.mjs";
 
 const { host, packageDir, entries, cwd, agentDir } = JSON.parse(process.argv[2]);
-// OMP exports its loader source; pi ships its official loader beside dist/index.js.
+const runtimeExport = (specifier) => {
+	const key = `./${specifier}`;
+	const exact = host.pkg.exports[key];
+	if (typeof exact?.import === "string") return exact.import;
+	const wildcard = host.pkg.exports["./*"];
+	if (typeof wildcard?.import !== "string") throw new Error(`No official runtime export for ${specifier}`);
+	return wildcard.import.replace("*", specifier);
+};
 const loaderPath = host.id === "omp"
-	? join(host.root, host.pkg.exports["./extensibility/extensions/*"].import.replace("*", "loader"))
+	? join(host.root, runtimeExport("extensibility/extensions/loader"))
 	: join(dirname(join(host.root, host.pkg.exports["."].import)), "core/extensions/loader.js");
 console.log(`[check:load:${host.id}] official loader=${loaderPath}; isolated cwd=${cwd}; agentDir=${agentDir}`);
 const loader = await import(pathToFileURL(loaderPath).href);

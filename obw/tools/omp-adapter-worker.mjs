@@ -7,7 +7,14 @@ import { runInNewContext } from "node:vm";
 import { assertOmpWritebackRegistration } from "./omp-registration.mjs";
 
 const { host, entry } = JSON.parse(process.argv[2]);
-const hostModule = (name) => import(pathToFileURL(join(host.root, host.pkg.exports[`./${name.split("/")[0]}/*`].import.replace("*", name.slice(name.indexOf("/") + 1)))).href);
+const runtimeExport = (specifier) => {
+	const exact = host.pkg.exports[`./${specifier}`];
+	if (typeof exact?.import === "string") return exact.import;
+	const wildcard = host.pkg.exports["./*"];
+	if (typeof wildcard?.import !== "string") throw new Error(`No official runtime export for ${specifier}`);
+	return wildcard.import.replace("*", specifier);
+};
+const hostModule = (specifier) => import(pathToFileURL(join(host.root, runtimeExport(specifier))).href);
 const loader = await hostModule("extensibility/extensions/loader");
 const { serializeTitleSlot } = await hostModule("session/session-title-slot");
 const { SessionManager } = await hostModule("session/session-manager");
@@ -109,7 +116,7 @@ async function fixture() {
 			confirm: async () => { outerConfirmCalls++; return false; },
 			custom: (factory) => new Promise((resolve) => {
 				done = resolve;
-				component = factory({ requestRender() {} }, {}, { matches: () => false }, () => resolve());
+				component = factory({ requestRender() {} }, {}, { matchesId: () => false }, () => resolve());
 			}),
 		},
 	};

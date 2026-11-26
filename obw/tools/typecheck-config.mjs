@@ -2,8 +2,7 @@ import { existsSync, mkdirSync, readFileSync, symlinkSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { declarationPaths } from "./hosts.mjs";
 
-export function tuiDeclarationPaths(host) {
-	const name = host.id === "pi" ? "@earendil-works/pi-tui" : "@oh-my-pi/pi-tui";
+export function dependencyDeclarationPaths(host, name) {
 	for (let directory = host.root; ; directory = dirname(directory)) {
 		const root = join(directory, "node_modules", name);
 		const manifest = join(root, "package.json");
@@ -12,16 +11,25 @@ export function tuiDeclarationPaths(host) {
 			if (pkg.name !== name || pkg.version !== host.version) throw new Error(`Expected ${name}@${host.version}, got ${pkg.name}@${pkg.version}`);
 			const types = pkg.exports ? pkg.exports["."]?.types : pkg.types;
 			if (typeof types !== "string" || !existsSync(resolve(root, types))) throw new Error(`${name} has no official public types entry`);
-			console.log(`[typecheck:${host.id}] ${name}@${pkg.version}; ${pkg.exports ? "exports.types" : "types"}=${types}; root=${root}`);
-			return { [name]: [resolve(root, types)] };
+			console.log(`[typecheck:${host.id}] ${name}@${pkg.version}; root=${root}`);
+			return pkg.exports ? declarationPaths({ ...host, name, root, pkg }) : { [name]: [resolve(root, types)] };
 		}
 		if (dirname(directory) === directory) throw new Error(`Cannot locate installed ${name}`);
 	}
 }
 
+export function tuiDeclarationPaths(host) {
+	const name = host.id === "pi" ? "@earendil-works/pi-tui" : "@oh-my-pi/pi-tui";
+	return dependencyDeclarationPaths(host, name);
+}
+
+export function nativeDeclarationPaths(host) {
+	return dependencyDeclarationPaths(host, "@oh-my-pi/pi-natives");
+}
+
 export function hostTypecheckConfig(id, packageDir, host, typeRoots = resolve(packageDir, ".checks/typeRoots.omp")) {
 	/** @type {Record<string, string[]>} */
-	const paths = { ...declarationPaths(host), ...tuiDeclarationPaths(host) };
+	const paths = { ...declarationPaths(host), ...tuiDeclarationPaths(host), ...(id === "omp" ? nativeDeclarationPaths(host) : {}) };
 	const environment = id === "omp" ? bunTypecheckEnvironment(packageDir, typeRoots) : {};
 	if ("paths" in environment) Object.assign(paths, environment.paths);
 	if (id === "pi") {
@@ -35,6 +43,8 @@ export function hostTypecheckConfig(id, packageDir, host, typeRoots = resolve(pa
 		paths.node = [join(nodeRoot, "index.d.ts")];
 		paths.path = [join(nodeRoot, "path.d.ts")];
 		paths["node:path"] = [join(nodeRoot, "path.d.ts")];
+		// GenAI's declarations import its optional MCP peer even without MCP use.
+		paths["@modelcontextprotocol/sdk/*"] = [resolve(packageDir, "node_modules/@modelcontextprotocol/sdk/dist/esm/*")];
 		console.log(`[typecheck:pi] official @types/node@${node.version}; root=${nodeRoot}; types=[node] (no Bun globals)`);
 	}
 	return {
@@ -43,9 +53,9 @@ export function hostTypecheckConfig(id, packageDir, host, typeRoots = resolve(pa
 			strict: true, noEmit: true, types: [id === "pi" ? "node" : "bun"],
 			allowImportingTsExtensions: true,
 			...(id === "pi" ? { typeRoots: [resolve(packageDir, "node_modules/@types")] } : {}),
-			// OMP 18.13.3's published declaration graph does not type-check on its
-			// own (missing @huggingface/tokenizers aliases, models.json, fastembed;
-			// a CustomToolAdapter override mismatch). OBW's use of that API stays checked.
+			// Keep the existing OMP library-check policy: its published
+			// CustomToolAdapter declaration does not satisfy AgentTool.
+			// OBW's own API usage remains strictly checked.
 			...(id === "omp" ? { skipLibCheck: true } : {}),
 			...environment,
 			paths,
@@ -54,6 +64,7 @@ export function hostTypecheckConfig(id, packageDir, host, typeRoots = resolve(pa
 		exclude: ["../node_modules", "../.checks", `../${id === "omp" ? "pi" : "index"}.ts`, ...(id === "pi" ? ["../**/*.test.ts"] : [])],
 	};
 }
+
 
 // These units and their tests are host-free. Host adapter imports must not
 // pull either SDK declaration graph into the Bun-global check.
